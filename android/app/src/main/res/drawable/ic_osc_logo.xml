@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="40dp"
+    android:viewportWidth="120"
+    android:viewportHeight="40">
+
+    <!-- OSC Cloud shape - placeholder, replace with actual logo paths from designer -->
+    <path
+        android:fillColor="#3B9FD9"
+        android:pathData="M30,10 C20,10 15,18 15,25 C15,32 22,38 30,38
+                          L90,38 C98,38 105,32 105,25 C105,18 100,10 90,10
+                          C85,5 75,5 70,10 C65,5 55,5 50,10
+                          C45,5 35,5 30,10 Z"/>
+
+    <!-- Note: Text "OSC" will be rendered separately using Typography -->
+</vector>

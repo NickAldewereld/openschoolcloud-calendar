@@ -19,13 +19,13 @@ MVP (v0.1)  →  v1.0  →  v2.0
 ### Sprint 1 (Week 1-2): Foundation
 
 **Android:**
-- [ ] Project setup (Gradle, Hilt, Compose)
-- [ ] CalDAV discovery implementatie
-  - [ ] Well-known endpoint detection
-  - [ ] Principal URL discovery
-  - [ ] Calendar home set discovery
-- [ ] Account storage (encrypted)
-- [ ] Basic login UI
+- [x] Project setup (Gradle, Hilt, Compose)
+- [x] CalDAV discovery implementatie
+  - [x] Well-known endpoint detection
+  - [x] Principal URL discovery
+  - [x] Calendar home set discovery
+- [x] Account storage (encrypted)
+- [x] Basic login UI
 
 **iOS:**
 - [ ] Project setup (SwiftUI, CoreData)
@@ -34,16 +34,16 @@ MVP (v0.1)  →  v1.0  →  v2.0
 - [ ] Basic login UI
 
 **Shared:**
-- [ ] CalDAV protocol documentation
+- [x] CalDAV protocol documentation
 - [ ] Test server setup
 
 ### Sprint 2 (Week 3-4): Core Calendar
 
 **Android:**
-- [ ] Room database schema (Events, Calendars, Accounts)
-- [ ] CalDAV sync engine (CTag-based)
-- [ ] Calendar list screen
-- [ ] Week view (basic)
+- [x] Room database schema (Events, Calendars, Accounts)
+- [x] CalDAV sync engine (CTag-based)
+- [x] Calendar list screen
+- [x] Week view (basic)
 
 **iOS:**
 - [ ] CoreData schema
@@ -51,14 +51,24 @@ MVP (v0.1)  →  v1.0  →  v2.0
 - [ ] Calendar list screen
 - [ ] Week view (basic)
 
+### Sprint 2.5: Huisstijl & Build Fix
+
+**Android:**
+- [x] Gradle wrapper generatie (8.5)
+- [x] OSC brand colors (Huisstijlgids v1.0)
+- [x] Typography setup (Open Sans ready)
+- [x] Nederlandse strings (250+ vertalingen)
+- [x] Adaptive icons met cloud shape
+- [x] Splash screen (SplashScreen API)
+
 ### Sprint 3 (Week 5-6): Event Management
 
 **Android:**
-- [ ] Day view
-- [ ] Month view
-- [ ] Event detail screen
-- [ ] Event create/edit screen
-- [ ] iCal serialization (ical4j)
+- [x] Day view
+- [~] Month view (basis grid, navigatie werkt)
+- [ ] Event detail screen (UI stub aanwezig)
+- [ ] Event create/edit screen (UI stub aanwezig)
+- [x] iCal serialization (ical4j parsing)
 
 **iOS:**
 - [ ] Day view
@@ -70,11 +80,12 @@ MVP (v0.1)  →  v1.0  →  v2.0
 ### Sprint 4 (Week 7-8): Polish & Release
 
 **Android:**
-- [ ] Offline cache
+- [x] Offline cache (Room database)
+- [x] Background sync (WorkManager, 15 min)
 - [ ] Basic reminders (local notifications)
 - [ ] Attendee display
 - [ ] Invite sending (iTIP)
-- [ ] Error handling
+- [~] Error handling (basis aanwezig)
 - [ ] Play Store / F-Droid preparation
 
 **iOS:**
@@ -86,7 +97,7 @@ MVP (v0.1)  →  v1.0  →  v2.0
 - [ ] App Store preparation
 
 **Both:**
-- [ ] Translation review (NL)
+- [x] Translation review (NL) - 250+ strings
 - [ ] Accessibility audit
 - [ ] Beta testing
 - [ ] Release notes

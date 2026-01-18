@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"C:\\\\Users\\\\nicka\\\\Desktop\\\\openschoolcloud-calendar\\\\android\\\\app\\\\src\\\\main\\\\java\\\\nl\\\\openschoolcloud\\\\calendar\\\\CalendarApplication.kt\")",
+      "Bash(./gradlew testDebugUnitTest:*)",
+      "Bash(cmd.exe /c:*)",
+      "Bash(gradle --version:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(./gradlew assembleDebug:*)"
+    ]
+  }
+}

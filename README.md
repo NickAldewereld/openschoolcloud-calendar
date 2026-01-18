@@ -10,6 +10,31 @@
 
 ---
 
+## Huidige Status (v0.1.0-alpha)
+
+**Android:** 🟡 In actieve ontwikkeling (Sprint 2.5 compleet)
+
+| Feature | Status | Notities |
+|---------|--------|----------|
+| Login & Onboarding | ✅ Werkt | 3-velden login, credential encryption |
+| CalDAV Discovery | ✅ Werkt | Well-known, principal, calendar-home-set |
+| Account Opslag | ✅ Werkt | EncryptedSharedPreferences |
+| Calendar Sync | ✅ Werkt | CTag-based differential sync |
+| Week View | ✅ Werkt | 7-kolommen grid met events |
+| Day View | ✅ Werkt | Uur-voor-uur weergave |
+| Month View | 🟡 Basis | Grid aanwezig, navigatie werkt |
+| Pull-to-Refresh | ✅ Werkt | Handmatige sync trigger |
+| Background Sync | ✅ Werkt | WorkManager, 15 min interval |
+| Offline Cache | ✅ Werkt | Room database |
+| Event Details | 🔴 TODO | UI stub aanwezig |
+| Event Create/Edit | 🔴 TODO | UI stub aanwezig |
+| Huisstijl | ✅ Werkt | OSC brand colors, Dutch strings |
+| Splash Screen | ✅ Werkt | SplashScreen API |
+
+**iOS:** ⬜ Nog niet gestart
+
+---
+
 ## Het Probleem
 
 Scholen willen weg van Google Calendar, maar het alternatief (Nextcloud + DAVx⁵) is te technisch:
@@ -39,23 +64,29 @@ OpenSchoolCloud Calendar:
 
 ## Features
 
-### MVP
+### MVP (in ontwikkeling)
 - ✅ One-time onboarding (3 velden, 30 seconden)
-- ✅ Dag/week/maand views
-- ✅ Events aanmaken en bewerken
-- ✅ Uitnodigingen versturen + updates bij wijzigingen
-- ✅ Reminders
-- ✅ Offline cache
+- ✅ Week view met events
+- ✅ Day view met uur-voor-uur weergave
+- 🟡 Month view (basis, navigatie werkt)
+- 🔴 Events aanmaken en bewerken (TODO)
+- 🔴 Event details weergave (TODO)
+- 🔴 Uitnodigingen versturen (TODO)
+- 🔴 Reminders/notificaties (TODO)
+- ✅ Offline cache (Room database)
 - ✅ Kalenderkleur support
+- ✅ Nederlandse UI
+- ✅ Pull-to-refresh sync
+- ✅ Background sync (WorkManager)
 
-### v1
+### v1 (gepland)
 - ⬜ Meerdere accounts
 - ⬜ Zoekfunctie
 - ⬜ Herhalende afspraken (volledige edit)
 - ⬜ Widgets (Android + iOS)
 - ⬜ Contact autocomplete (device + CardDAV)
 
-### v2
+### v2 (gepland)
 - ⬜ Natural language input
 - ⬜ Free/busy scheduling assistant
 - ⬜ 10-minutengesprekken integratie
@@ -123,32 +154,33 @@ open OpenSchoolCloudCalendar.xcworkspace
 
 ```
 openschoolcloud-calendar/
-├── android/                    # Android app (Kotlin/Compose)
-│   ├── app/
-│   │   └── src/main/
-│   │       ├── java/nl/openschoolcloud/calendar/
-│   │       └── res/
+├── android/                              # Android app (Kotlin/Compose)
+│   ├── app/src/main/java/nl/openschoolcloud/calendar/
+│   │   ├── data/                        # Data layer
+│   │   │   ├── local/                   # Room database, DAOs
+│   │   │   │   └── entity/              # EventEntity, CalendarEntity, etc.
+│   │   │   └── remote/                  # CalDAV client, XML parser
+│   │   │       └── auth/                # Credential storage
+│   │   ├── domain/                      # Domain layer
+│   │   │   ├── model/                   # Event, Calendar, Account models
+│   │   │   ├── repository/              # Repository interfaces
+│   │   │   └── usecase/                 # Business logic
+│   │   ├── presentation/                # UI layer
+│   │   │   ├── calendar/                # Calendar screens (week/day/month)
+│   │   │   ├── login/                   # Login screen
+│   │   │   ├── settings/                # Settings screen
+│   │   │   ├── navigation/              # App navigation
+│   │   │   └── theme/                   # Material3 theme, colors
+│   │   ├── di/                          # Hilt dependency injection
+│   │   └── sync/                        # WorkManager background sync
+│   ├── app/src/test/                    # Unit tests (~73 tests)
 │   └── build.gradle.kts
 │
-├── ios/                        # iOS app (Swift/SwiftUI)
-│   ├── OpenSchoolCloudCalendar/
-│   │   ├── App/
-│   │   ├── Features/
-│   │   ├── Core/
-│   │   └── Resources/
-│   └── OpenSchoolCloudCalendar.xcodeproj
-│
-├── shared/                     # Shared documentation & specs
-│   ├── caldav/                 # CalDAV protocol documentation
-│   └── api/                    # API contracts (indien nodig)
-│
-├── docs/                       # Project documentation
-│   ├── ARCHITECTURE.md
-│   └── TESTING.md
-│
-├── SCOPE.md                    # Feature scope & roadmap
-├── CONTRIBUTING.md             # Contribution guidelines
-├── LICENSE                     # Apache 2.0
+├── ios/                                 # iOS app (nog niet gestart)
+├── shared/                              # Shared documentation
+├── SCOPE.md                             # Feature scope
+├── MILESTONES.md                        # Sprint planning
+├── CHANGELOG.md                         # Wijzigingen per sprint
 └── README.md
 ```
 

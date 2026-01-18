@@ -1,11 +1,19 @@
 package nl.openschoolcloud.calendar.data.remote.caldav
 
+import android.util.Xml
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
+import java.io.StringReader
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,7 +40,14 @@ class CalDavClient @Inject constructor(
     
     /**
      * Discover the CalDAV principal URL
-     * 
+     *
+     * Tries multiple discovery paths in order:
+     * 1. /.well-known/caldav (RFC 6764)
+     * 2. /remote.php/dav (Nextcloud)
+     * 3. /dav.php (generic)
+     * 4. /caldav.php (generic)
+     * 5. /calendar/dav (some implementations)
+     *
      * @param serverUrl Base server URL (e.g., https://cloud.school.nl)
      * @param username Username
      * @param password App password
@@ -42,36 +57,52 @@ class CalDavClient @Inject constructor(
         serverUrl: String,
         username: String,
         password: String
-    ): Result<String> {
-        // Try well-known first
-        val wellKnownResult = propfind(
-            url = "$serverUrl$WELL_KNOWN_CALDAV",
-            username = username,
-            password = password,
-            body = CURRENT_USER_PRINCIPAL_REQUEST,
-            depth = 0
+    ): Result<String> = withContext(Dispatchers.IO) {
+        val discoveryPaths = listOf(
+            WELL_KNOWN_CALDAV,
+            NEXTCLOUD_DAV_PATH,
+            "/dav.php",
+            "/caldav.php",
+            "/calendar/dav"
         )
-        
-        if (wellKnownResult.isSuccess) {
-            val principalUrl = parseCurrentUserPrincipal(wellKnownResult.getOrThrow())
-            if (principalUrl != null) {
-                return Result.success(resolveUrl(serverUrl, principalUrl))
+
+        var lastError: Exception? = null
+
+        for (path in discoveryPaths) {
+            try {
+                val result = tryDiscoverPrincipal("$serverUrl$path", username, password)
+                if (result.isSuccess) {
+                    val principalUrl = result.getOrThrow()
+                    return@withContext Result.success(resolveUrl(serverUrl, principalUrl))
+                }
+            } catch (e: Exception) {
+                lastError = e
+                // Continue to next path
             }
         }
-        
-        // Fallback to Nextcloud path
-        val nextcloudResult = propfind(
-            url = "$serverUrl$NEXTCLOUD_DAV_PATH",
+
+        Result.failure(lastError ?: CalDavException("Could not discover CalDAV endpoint"))
+    }
+
+    /**
+     * Try to discover principal at a specific URL
+     */
+    private suspend fun tryDiscoverPrincipal(
+        url: String,
+        username: String,
+        password: String
+    ): Result<String> {
+        val result = propfind(
+            url = url,
             username = username,
             password = password,
             body = CURRENT_USER_PRINCIPAL_REQUEST,
             depth = 0
         )
-        
-        return nextcloudResult.mapCatching { response ->
+
+        return result.mapCatching { response ->
             parseCurrentUserPrincipal(response)
-                ?.let { resolveUrl(serverUrl, it) }
-                ?: throw CalDavException("Could not find principal URL")
+                ?: throw CalDavException("No principal URL found at $url")
         }
     }
     
@@ -232,14 +263,177 @@ class CalDavClient @Inject constructor(
             .url(eventUrl)
             .header("Authorization", Credentials.basic(username, password))
             .delete()
-        
+
         etag?.let {
             requestBuilder.header("If-Match", it)
         }
-        
+
         return executeRequest(requestBuilder.build()).map { }
     }
-    
+
+    /**
+     * Fetch all events from a calendar via REPORT request
+     * Uses calendar-query for initial sync or fetching events in a date range
+     *
+     * @param calendarUrl The calendar URL
+     * @param username Username
+     * @param password Password
+     * @param startDate Optional start date for filtering
+     * @param endDate Optional end date for filtering
+     * @return List of EventData containing href, etag, and raw iCal data
+     */
+    suspend fun fetchEvents(
+        calendarUrl: String,
+        username: String,
+        password: String,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): Result<List<EventData>> = withContext(Dispatchers.IO) {
+        try {
+            val requestBody = buildCalendarQueryRequest(startDate, endDate)
+
+            val request = Request.Builder()
+                .url(calendarUrl)
+                .method("REPORT", requestBody.toRequestBody(XML_MEDIA_TYPE))
+                .header("Authorization", Credentials.basic(username, password))
+                .header("Depth", "1")
+                .header("Content-Type", "application/xml; charset=utf-8")
+                .build()
+
+            val response = httpClient.newCall(request).execute()
+
+            if (!response.isSuccessful && response.code != 207) {
+                return@withContext Result.failure(
+                    CalDavException("Failed to fetch events: ${response.code}", response.code)
+                )
+            }
+
+            val body = response.body?.string() ?: ""
+            val events = parseCalendarQueryResponse(body, calendarUrl)
+
+            Result.success(events)
+        } catch (e: Exception) {
+            Result.failure(CalDavException("Failed to fetch events: ${e.message}", cause = e))
+        }
+    }
+
+    /**
+     * Build calendar-query REPORT request body
+     */
+    private fun buildCalendarQueryRequest(
+        startDate: LocalDate?,
+        endDate: LocalDate?
+    ): String {
+        val timeRange = if (startDate != null && endDate != null) {
+            """
+                        <c:time-range start="${formatICalDate(startDate)}"
+                                      end="${formatICalDate(endDate)}"/>
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        return """
+            <?xml version="1.0" encoding="utf-8"?>
+            <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+                <d:prop>
+                    <d:getetag/>
+                    <c:calendar-data/>
+                </d:prop>
+                <c:filter>
+                    <c:comp-filter name="VCALENDAR">
+                        <c:comp-filter name="VEVENT">
+                            $timeRange
+                        </c:comp-filter>
+                    </c:comp-filter>
+                </c:filter>
+            </c:calendar-query>
+        """.trimIndent()
+    }
+
+    /**
+     * Format LocalDate to iCal date format (YYYYMMDDTHHMMSSZ)
+     */
+    private fun formatICalDate(date: LocalDate): String {
+        return date.format(DateTimeFormatter.BASIC_ISO_DATE) + "T000000Z"
+    }
+
+    /**
+     * Parse calendar-query REPORT response
+     * Extracts href, etag, and raw iCal data for each event
+     */
+    private fun parseCalendarQueryResponse(response: String, baseUrl: String): List<EventData> {
+        val events = mutableListOf<EventData>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var inResponse = false
+            var inPropstat = false
+            var currentHref: String? = null
+            var currentEtag: String? = null
+            var currentIcalData: String? = null
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentEtag = null
+                                currentIcalData = null
+                            }
+                            "propstat" -> inPropstat = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "getetag" -> {
+                                if (inPropstat) {
+                                    currentEtag = parser.nextText()?.trim('"')
+                                }
+                            }
+                            "calendar-data" -> {
+                                if (inPropstat) {
+                                    currentIcalData = parser.nextText()
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                if (currentHref != null && currentIcalData != null) {
+                                    events.add(
+                                        EventData(
+                                            href = resolveUrl(baseUrl, currentHref),
+                                            etag = currentEtag ?: "",
+                                            icalData = currentIcalData
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (e: Exception) {
+            // Return what we've parsed so far
+        }
+
+        return events
+    }
+
     // ==================== Private helpers ====================
     
     private suspend fun propfind(
@@ -302,30 +496,362 @@ class CalDavClient @Inject constructor(
     }
     
     // ==================== XML Parsing ====================
-    // TODO: Implement proper XML parsing
-    
+
+    /**
+     * Parse current-user-principal from PROPFIND response
+     * Extracts href from <d:current-user-principal><d:href>...</d:href></d:current-user-principal>
+     */
     private fun parseCurrentUserPrincipal(response: String): String? {
-        // Parse <d:current-user-principal><d:href>...</d:href></d:current-user-principal>
-        TODO("Implement XML parsing")
+        return try {
+            val parser = createParser(response)
+            var inCurrentUserPrincipal = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "current-user-principal") {
+                            inCurrentUserPrincipal = true
+                        } else if (localName == "href" && inCurrentUserPrincipal) {
+                            return parser.nextText()
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "current-user-principal") {
+                            inCurrentUserPrincipal = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
     }
-    
+
+    /**
+     * Parse calendar-home-set from PROPFIND response
+     * Extracts href from <cal:calendar-home-set><d:href>...</d:href></cal:calendar-home-set>
+     */
     private fun parseCalendarHomeSet(response: String): String? {
-        // Parse <cal:calendar-home-set><d:href>...</d:href></cal:calendar-home-set>
-        TODO("Implement XML parsing")
+        return try {
+            val parser = createParser(response)
+            var inCalendarHomeSet = false
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-home-set") {
+                            inCalendarHomeSet = true
+                        } else if (localName == "href" && inCalendarHomeSet) {
+                            return parser.nextText()
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+                        if (localName == "calendar-home-set") {
+                            inCalendarHomeSet = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
     }
-    
+
+    /**
+     * Parse calendars from PROPFIND multistatus response
+     * Filters only responses containing <cal:calendar/> resourcetype
+     */
     private fun parseCalendars(response: String, baseUrl: String): List<CalendarInfo> {
-        // Parse multistatus response with calendar properties
-        TODO("Implement XML parsing")
+        val calendars = mutableListOf<CalendarInfo>()
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            // State for current response being parsed
+            var currentHref: String? = null
+            var currentDisplayName: String? = null
+            var currentColor: String? = null
+            var currentCtag: String? = null
+            var currentSyncToken: String? = null
+            var isCalendar = false
+            var hasWritePrivilege = false
+            var supportsEvents = false
+
+            // Track nesting
+            var inResponse = false
+            var inPropstat = false
+            var inProp = false
+            var inResourceType = false
+            var inPrivilegeSet = false
+            var inPrivilege = false
+            var inSupportedComponents = false
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                // Reset state
+                                currentHref = null
+                                currentDisplayName = null
+                                currentColor = null
+                                currentCtag = null
+                                currentSyncToken = null
+                                isCalendar = false
+                                hasWritePrivilege = false
+                                supportsEvents = false
+                            }
+                            "propstat" -> inPropstat = true
+                            "prop" -> inProp = true
+                            "resourcetype" -> inResourceType = true
+                            "current-user-privilege-set" -> inPrivilegeSet = true
+                            "privilege" -> inPrivilege = true
+                            "supported-calendar-component-set" -> inSupportedComponents = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "displayname" -> {
+                                if (inProp) {
+                                    currentDisplayName = parser.nextText()
+                                }
+                            }
+                            "calendar-color" -> {
+                                if (inProp) {
+                                    currentColor = parser.nextText()
+                                }
+                            }
+                            "getctag" -> {
+                                if (inProp) {
+                                    currentCtag = parser.nextText()
+                                }
+                            }
+                            "sync-token" -> {
+                                if (inProp) {
+                                    currentSyncToken = parser.nextText()
+                                }
+                            }
+                            "calendar" -> {
+                                if (inResourceType) {
+                                    isCalendar = true
+                                }
+                            }
+                            "write" -> {
+                                if (inPrivilege) {
+                                    hasWritePrivilege = true
+                                }
+                            }
+                            "comp" -> {
+                                if (inSupportedComponents) {
+                                    val name = parser.getAttributeValue(null, "name")
+                                    if (name == "VEVENT") {
+                                        supportsEvents = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                // End of response - add calendar if it's valid
+                                if (isCalendar && currentHref != null) {
+                                    val resolvedUrl = resolveUrl(baseUrl.substringBefore("/remote.php"), currentHref)
+                                    calendars.add(
+                                        CalendarInfo(
+                                            url = resolvedUrl,
+                                            displayName = currentDisplayName ?: "Calendar",
+                                            color = normalizeColor(currentColor),
+                                            ctag = currentCtag,
+                                            syncToken = currentSyncToken,
+                                            readOnly = !hasWritePrivilege,
+                                            supportsEvents = supportsEvents
+                                        )
+                                    )
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                            "prop" -> inProp = false
+                            "resourcetype" -> inResourceType = false
+                            "current-user-privilege-set" -> inPrivilegeSet = false
+                            "privilege" -> inPrivilege = false
+                            "supported-calendar-component-set" -> inSupportedComponents = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (e: Exception) {
+            // Return whatever we've parsed so far
+        }
+
+        return calendars
     }
-    
+
+    /**
+     * Parse CTag from PROPFIND response
+     */
     private fun parseCtag(response: String): String? {
-        // Parse <cs:getctag>...</cs:getctag>
-        TODO("Implement XML parsing")
+        return try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG) {
+                    val localName = parser.name.substringAfter(":")
+                    if (localName == "getctag") {
+                        return parser.nextText()
+                    }
+                }
+                eventType = parser.next()
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
     }
-    
+
+    /**
+     * Parse sync-collection response
+     * Extracts new sync token and list of changed/deleted events
+     */
     private fun parseSyncCollectionResponse(response: String): SyncCollectionResponse {
-        TODO("Implement XML parsing")
+        val added = mutableListOf<String>()
+        val modified = mutableListOf<String>()
+        val deleted = mutableListOf<String>()
+        var syncToken = ""
+
+        try {
+            val parser = createParser(response)
+            var eventType = parser.eventType
+
+            var inResponse = false
+            var inPropstat = false
+            var currentHref: String? = null
+            var currentStatus: String? = null
+            var currentEtag: String? = null
+            var statusCode: Int? = null
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                when (eventType) {
+                    XmlPullParser.START_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                inResponse = true
+                                currentHref = null
+                                currentStatus = null
+                                currentEtag = null
+                                statusCode = null
+                            }
+                            "propstat" -> inPropstat = true
+                            "href" -> {
+                                if (inResponse && !inPropstat) {
+                                    currentHref = parser.nextText()
+                                }
+                            }
+                            "status" -> {
+                                if (inPropstat) {
+                                    currentStatus = parser.nextText()
+                                    // Parse status code from "HTTP/1.1 200 OK" or "HTTP/1.1 404 Not Found"
+                                    statusCode = currentStatus.split(" ").getOrNull(1)?.toIntOrNull()
+                                }
+                            }
+                            "getetag" -> {
+                                if (inPropstat) {
+                                    currentEtag = parser.nextText()
+                                }
+                            }
+                            "sync-token" -> {
+                                // Top-level sync-token (new sync token)
+                                if (!inResponse) {
+                                    syncToken = parser.nextText()
+                                }
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> {
+                        val localName = parser.name.substringAfter(":")
+
+                        when (localName) {
+                            "response" -> {
+                                // Determine if added, modified, or deleted
+                                currentHref?.let { href ->
+                                    when {
+                                        statusCode == 404 -> deleted.add(href)
+                                        currentEtag != null -> {
+                                            // Has etag = exists, could be new or modified
+                                            // For simplicity, treat all as modified (caller can check existence)
+                                            modified.add(href)
+                                        }
+                                    }
+                                }
+                                inResponse = false
+                            }
+                            "propstat" -> inPropstat = false
+                        }
+                    }
+                }
+                eventType = parser.next()
+            }
+        } catch (e: Exception) {
+            // Return whatever we parsed
+        }
+
+        return SyncCollectionResponse(
+            syncToken = syncToken,
+            added = added,
+            modified = modified,
+            deleted = deleted
+        )
+    }
+
+    /**
+     * Create an XmlPullParser from a string
+     */
+    private fun createParser(xmlString: String): XmlPullParser {
+        val parser = Xml.newPullParser()
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+        parser.setInput(StringReader(xmlString))
+        return parser
+    }
+
+    /**
+     * Normalize color string to proper hex format
+     */
+    private fun normalizeColor(color: String?): String? {
+        if (color == null) return null
+
+        // Remove alpha if present (e.g., #0082c9FF -> #0082c9)
+        var normalized = color.trim()
+        if (normalized.startsWith("#") && normalized.length == 9) {
+            normalized = "#" + normalized.substring(1, 7)
+        }
+
+        return if (normalized.startsWith("#") && normalized.length == 7) {
+            normalized
+        } else {
+            null
+        }
     }
     
     private fun buildSyncCollectionRequest(syncToken: String?): String {
@@ -425,6 +951,15 @@ data class SyncCollectionResponse(
     val added: List<String>, // Event URLs
     val modified: List<String>,
     val deleted: List<String>
+)
+
+/**
+ * Event data returned from calendar-query REPORT
+ */
+data class EventData(
+    val href: String,
+    val etag: String,
+    val icalData: String
 )
 
 /**
