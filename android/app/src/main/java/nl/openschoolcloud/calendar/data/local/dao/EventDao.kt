@@ -22,6 +22,13 @@ interface EventDao {
     """)
     fun getInRange(startMillis: Long, endMillis: Long): Flow<List<EventEntity>>
 
+    @Query("""
+        SELECT * FROM events
+        WHERE dtStart < :endMillis AND (dtEnd > :startMillis OR dtEnd IS NULL)
+        ORDER BY dtStart
+    """)
+    fun getInRangeSync(startMillis: Long, endMillis: Long): List<EventEntity>
+
     @Query("SELECT * FROM events WHERE uid = :uid")
     suspend fun getByUid(uid: String): EventEntity?
 

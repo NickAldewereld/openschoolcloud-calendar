@@ -23,6 +23,9 @@ interface CalendarDao {
     @Query("SELECT * FROM calendars WHERE visible = 1 ORDER BY sortOrder")
     suspend fun getVisibleSync(): List<CalendarEntity>
 
+    @Query("SELECT * FROM calendars WHERE visible = 1 ORDER BY sortOrder")
+    fun getVisibleCalendarsSync(): List<CalendarEntity>
+
     @Query("SELECT * FROM calendars")
     fun getAll(): Flow<List<CalendarEntity>>
 

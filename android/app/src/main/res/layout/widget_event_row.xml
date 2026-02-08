@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_event_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
+
+    <!-- Calendar color indicator -->
+    <View
+        android:id="@+id/widget_event_color"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="8dp"
+        tools:background="#3B9FD9" />
+
+    <!-- Time -->
+    <TextView
+        android:id="@+id/widget_event_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#3B9FD9"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        tools:text="09:00" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/widget_event_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#333333"
+        android:textSize="13sp"
+        tools:text="Teamoverleg" />
+
+</LinearLayout>

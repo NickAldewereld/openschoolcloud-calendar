@@ -256,6 +256,16 @@
     <string name="notification_action_view">Bekijken</string>
     <string name="notification_action_snooze">Uitstellen 5 min</string>
 
+    <!-- Widgets -->
+    <string name="widget_today_name">Vandaag</string>
+    <string name="widget_today_description">Toont de afspraken van vandaag</string>
+    <string name="widget_no_events">Geen afspraken vandaag</string>
+    <string name="widget_next_event_name">Volgende afspraak</string>
+    <string name="widget_next_event_description">Toont je eerstvolgende afspraak</string>
+    <string name="widget_no_upcoming">Geen komende afspraken</string>
+    <string name="widget_in_minutes">Over %d min</string>
+    <string name="widget_now">Nu</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>
