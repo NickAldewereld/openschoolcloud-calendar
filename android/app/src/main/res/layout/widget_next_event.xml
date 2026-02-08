@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_next_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <!-- Calendar color indicator bar -->
+    <View
+        android:id="@+id/widget_next_color"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="10dp"
+        tools:background="#3B9FD9" />
+
+    <!-- Event info -->
+    <LinearLayout
+        android:id="@+id/widget_next_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/widget_next_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="Teamoverleg" />
+
+        <!-- Time -->
+        <TextView
+            android:id="@+id/widget_next_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#3B9FD9"
+            android:textSize="12sp"
+            tools:text="Over 45 min" />
+
+        <!-- Location (optional) -->
+        <TextView
+            android:id="@+id/widget_next_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#666666"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="Lokaal 2.13"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <!-- Empty state (overlays content area) -->
+    <TextView
+        android:id="@+id/widget_next_empty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/widget_no_upcoming"
+        android:textColor="#666666"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+</LinearLayout>
