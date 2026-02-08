@@ -127,6 +127,9 @@ dependencies {
 
     // Security (encrypted storage)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // QR Code generation (for booking links)
+    implementation("com.google.zxing:core:3.5.2")
     
     // WorkManager (background sync)
     implementation("androidx.work:work-runtime-ktx:2.9.0")

@@ -256,6 +256,21 @@
     <string name="notification_action_view">Bekijken</string>
     <string name="notification_action_snooze">Uitstellen 5 min</string>
 
+    <!-- Afspraak-links (Booking) -->
+    <string name="booking_title">Afspraak-links</string>
+    <string name="booking_subtitle">Deel booking links met ouders voor afspraken zoals 10-minutengesprekken</string>
+    <string name="booking_duration">Duur: %d minuten</string>
+    <string name="booking_copy_link">Kopieer</string>
+    <string name="booking_share">Deel</string>
+    <string name="booking_share_via">Delen via</string>
+    <string name="booking_qr_code">QR code</string>
+    <string name="booking_qr_hint">Laat ouders deze QR code scannen om een afspraak te boeken</string>
+    <string name="booking_qr_error">Kan QR code niet genereren</string>
+    <string name="booking_link_copied">Link gekopieerd</string>
+    <string name="booking_empty_title">Geen afspraak-links</string>
+    <string name="booking_empty_description">Maak een afspraakconfiguratie aan in Nextcloud Calendar om booking links hier te zien</string>
+    <string name="booking_not_supported">Je server ondersteunt geen afspraak-links. Hiervoor is Nextcloud Calendar v3+ nodig.</string>
+
     <!-- Widgets -->
     <string name="widget_today_name">Vandaag</string>
     <string name="widget_today_description">Toont de afspraken van vandaag</string>

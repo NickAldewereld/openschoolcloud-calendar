@@ -155,6 +155,18 @@ data class AccountVerificationResult(
 )
 
 /**
+ * Repository for booking/appointment configurations
+ */
+interface BookingRepository {
+
+    /**
+     * Get all appointment configurations for the default account.
+     * Returns empty list if the server doesn't support appointments.
+     */
+    suspend fun getBookingConfigs(): Result<List<nl.openschoolcloud.calendar.domain.model.BookingConfig>>
+}
+
+/**
  * Result of a sync operation
  */
 data class SyncResult(

@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import nl.openschoolcloud.calendar.presentation.screens.booking.BookingScreen
 import nl.openschoolcloud.calendar.presentation.screens.calendar.CalendarScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
@@ -31,6 +32,11 @@ sealed class Route(val route: String) {
         fun createRoute(eventId: String) = "event/$eventId/edit"
     }
     object Settings : Route("settings")
+    object Booking : Route("booking")
+    object QrCode : Route("qrcode?url={url}&name={name}") {
+        fun createRoute(url: String, name: String) =
+            "qrcode?url=${java.net.URLEncoder.encode(url, "UTF-8")}&name=${java.net.URLEncoder.encode(name, "UTF-8")}"
+    }
 }
 
 @Composable
@@ -65,6 +71,9 @@ fun AppNavigation(
                 },
                 onSettingsClick = {
                     navController.navigate(Route.Settings.route)
+                },
+                onBookingClick = {
+                    navController.navigate(Route.Booking.route)
                 }
             )
         }
@@ -130,6 +139,37 @@ fun AppNavigation(
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        // Booking links
+        composable(Route.Booking.route) {
+            BookingScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onShowQrCode = { url, name ->
+                    navController.navigate(Route.QrCode.createRoute(url, name))
+                }
+            )
+        }
+
+        // QR Code display
+        composable(
+            route = Route.QrCode.route,
+            arguments = listOf(
+                navArgument("url") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val url = backStackEntry.arguments?.getString("url")?.let {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } ?: return@composable
+            val name = backStackEntry.arguments?.getString("name")?.let {
+                java.net.URLDecoder.decode(it, "UTF-8")
+            } ?: ""
+            nl.openschoolcloud.calendar.presentation.screens.booking.QrCodeScreen(
+                url = url,
+                name = name,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

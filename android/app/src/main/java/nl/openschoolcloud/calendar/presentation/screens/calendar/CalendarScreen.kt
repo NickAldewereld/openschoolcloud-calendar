@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -82,6 +83,7 @@ fun CalendarScreen(
     onEventClick: (String) -> Unit,
     @Suppress("UNUSED_PARAMETER") onCreateEvent: (String?) -> Unit,
     onSettingsClick: () -> Unit,
+    onBookingClick: () -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -121,7 +123,8 @@ fun CalendarScreen(
                 onNextWeek = viewModel::nextWeek,
                 onToday = viewModel::goToToday,
                 onSync = viewModel::syncAll,
-                onSettingsClick = onSettingsClick
+                onSettingsClick = onSettingsClick,
+                onBookingClick = onBookingClick
             )
         },
         floatingActionButton = {
@@ -210,7 +213,8 @@ private fun CalendarTopBar(
     onNextWeek: () -> Unit,
     onToday: () -> Unit,
     onSync: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onBookingClick: () -> Unit
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -275,6 +279,12 @@ private fun CalendarTopBar(
                         contentDescription = stringResource(R.string.settings_sync_now)
                     )
                 }
+            }
+            IconButton(onClick = onBookingClick) {
+                Icon(
+                    Icons.Default.Link,
+                    contentDescription = stringResource(R.string.booking_title)
+                )
             }
             IconButton(onClick = onSettingsClick) {
                 Icon(

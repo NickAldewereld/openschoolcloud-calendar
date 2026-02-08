@@ -14,9 +14,11 @@ import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
+import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.EventRepositoryImpl
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
+import nl.openschoolcloud.calendar.domain.repository.BookingRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
 import nl.openschoolcloud.calendar.domain.repository.EventRepository
 import okhttp3.OkHttpClient
@@ -87,4 +89,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindEventRepository(impl: EventRepositoryImpl): EventRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBookingRepository(impl: BookingRepositoryImpl): BookingRepository
 }

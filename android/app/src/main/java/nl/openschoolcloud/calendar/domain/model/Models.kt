@@ -108,6 +108,26 @@ data class Account(
 )
 
 /**
+ * Represents a Nextcloud Appointments booking configuration.
+ * Teachers can create these for parent-teacher conferences (10-minutengesprekken).
+ */
+data class BookingConfig(
+    val id: Long,
+    val name: String,
+    val description: String?,
+    val duration: Int, // minutes
+    val token: String,
+    val bookingUrl: String,
+    val calendarId: String?,
+    val visibility: BookingVisibility = BookingVisibility.PUBLIC
+)
+
+enum class BookingVisibility {
+    PUBLIC,
+    PRIVATE
+}
+
+/**
  * Sync status for offline support
  */
 enum class SyncStatus {
