@@ -1,0 +1,16 @@
+OpenSchoolCloud Calendar
+Copyright 2025 OpenSchoolCloud / Aldewereld Consultancy
+https://openschoolcloud.nl
+
+This software is licensed under the GNU Affero General Public License v3.0.
+
+This project uses the following open source components:
+- Nextcloud Calendar API (AGPL v3)
+- Jetpack Compose (Apache 2.0)
+- OkHttp (Apache 2.0)
+- ical4j (BSD)
+- ZXing (Apache 2.0)
+
+"OpenSchoolCloud" and the OSC logo are trademarks of Aldewereld Consultancy.
+The source code is open source, but the name and branding may not be used
+without permission for competing hosted services.

@@ -4,7 +4,7 @@
 
 🇳🇱 🇧🇪 🇩🇪 🇫🇷 — *Gebouwd voor Europees onderwijs*
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Android](https://img.shields.io/badge/Platform-Android-green.svg)](#android)
 [![iOS](https://img.shields.io/badge/Platform-iOS-lightgrey.svg)](#ios)
 
@@ -231,7 +231,13 @@ Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor guidelines.
 
 ## License
 
-Apache License 2.0 — zie [LICENSE](LICENSE)
+This project is licensed under the **GNU Affero General Public License v3.0** — zie [LICENSE](LICENSE).
+
+You are free to use, modify, and distribute this software, but any modifications
+must also be open sourced under AGPL v3.
+
+The "OpenSchoolCloud" name and branding are trademarks and may not be used
+for competing services without permission. Zie [NOTICE](NOTICE) voor details.
 
 ```
 Copyright 2025 OpenSchoolCloud / Aldewereld Consultancy
