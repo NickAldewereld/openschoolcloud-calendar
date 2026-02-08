@@ -58,7 +58,7 @@ class TodayWidgetFactory(
             context,
             AppDatabase::class.java,
             "openschoolcloud_calendar.db"
-        ).build()
+        ).allowMainThreadQueries().build()
     }
 
     data class WidgetEvent(
@@ -73,35 +73,39 @@ class TodayWidgetFactory(
     }
 
     override fun onDataSetChanged() {
-        val today = LocalDate.now()
-        val zone = ZoneId.systemDefault()
-        val startOfDay = today.atStartOfDay(zone).toInstant().toEpochMilli()
-        val endOfDay = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        try {
+            val today = LocalDate.now()
+            val zone = ZoneId.systemDefault()
+            val startOfDay = today.atStartOfDay(zone).toInstant().toEpochMilli()
+            val endOfDay = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
 
-        // Query events directly from Room (synchronous, runs on binder thread)
-        val eventDao = db.eventDao()
-        val calendarDao = db.calendarDao()
+            // Query events directly from Room (synchronous, runs on binder thread)
+            val eventDao = db.eventDao()
+            val calendarDao = db.calendarDao()
 
-        // Load calendar colors
-        val calendars = calendarDao.getVisibleCalendarsSync()
-        val colorMap = calendars.associate { it.id to it.colorInt }
-        val visibleCalendarIds = calendars.map { it.id }.toSet()
+            // Load calendar colors
+            val calendars = calendarDao.getVisibleCalendarsSync()
+            val colorMap = calendars.associate { it.id to it.colorInt }
+            val visibleCalendarIds = calendars.map { it.id }.toSet()
 
-        // Load events in range
-        val rawEvents = eventDao.getInRangeSync(startOfDay, endOfDay)
+            // Load events in range
+            val rawEvents = eventDao.getInRangeSync(startOfDay, endOfDay)
 
-        events = rawEvents
-            .filter { it.calendarId in visibleCalendarIds && it.syncStatus != "PENDING_DELETE" }
-            .sortedBy { it.dtStart }
-            .take(5)
-            .map { entity ->
-                WidgetEvent(
-                    uid = entity.uid,
-                    summary = entity.summary,
-                    startTime = entity.dtStart,
-                    calendarColor = colorMap[entity.calendarId] ?: Color.parseColor("#3B9FD9")
-                )
-            }
+            events = rawEvents
+                .filter { it.calendarId in visibleCalendarIds && it.syncStatus != "PENDING_DELETE" }
+                .sortedBy { it.dtStart }
+                .take(5)
+                .map { entity ->
+                    WidgetEvent(
+                        uid = entity.uid,
+                        summary = entity.summary,
+                        startTime = entity.dtStart,
+                        calendarColor = colorMap[entity.calendarId] ?: Color.parseColor("#3B9FD9")
+                    )
+                }
+        } catch (e: Exception) {
+            events = emptyList()
+        }
     }
 
     override fun onDestroy() {

@@ -73,7 +73,7 @@
         <!-- Today widget -->
         <receiver
             android:name=".widget.TodayWidgetReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -90,7 +90,7 @@
         <!-- Next Event widget -->
         <receiver
             android:name=".widget.NextEventWidgetReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

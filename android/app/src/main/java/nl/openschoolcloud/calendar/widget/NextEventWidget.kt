@@ -62,80 +62,89 @@ object NextEventWidget {
             context,
             AppDatabase::class.java,
             "openschoolcloud_calendar.db"
-        ).build()
+        ).allowMainThreadQueries().build()
 
-        val now = System.currentTimeMillis()
-        val endOfTomorrow = Instant.now()
-            .plus(2, ChronoUnit.DAYS)
-            .toEpochMilli()
+        try {
+            val now = System.currentTimeMillis()
+            val endOfTomorrow = Instant.now()
+                .plus(2, ChronoUnit.DAYS)
+                .toEpochMilli()
 
-        val eventDao = db.eventDao()
-        val calendarDao = db.calendarDao()
+            val eventDao = db.eventDao()
+            val calendarDao = db.calendarDao()
 
-        val calendars = calendarDao.getVisibleCalendarsSync()
-        val colorMap = calendars.associate { it.id to it.colorInt }
-        val visibleIds = calendars.map { it.id }.toSet()
+            val calendars = calendarDao.getVisibleCalendarsSync()
+            val colorMap = calendars.associate { it.id to it.colorInt }
+            val visibleIds = calendars.map { it.id }.toSet()
 
-        val nextEvent = eventDao.getInRangeSync(now, endOfTomorrow)
-            .filter { it.calendarId in visibleIds && it.syncStatus != "PENDING_DELETE" }
-            .sortedBy { it.dtStart }
-            .firstOrNull()
+            val nextEvent = eventDao.getInRangeSync(now, endOfTomorrow)
+                .filter { it.calendarId in visibleIds && it.syncStatus != "PENDING_DELETE" }
+                .sortedBy { it.dtStart }
+                .firstOrNull()
 
-        if (nextEvent != null) {
-            // Show event
-            views.setViewVisibility(R.id.widget_next_color, View.VISIBLE)
-            views.setViewVisibility(R.id.widget_next_content, View.VISIBLE)
-            views.setViewVisibility(R.id.widget_next_empty, View.GONE)
+            if (nextEvent != null) {
+                // Show event
+                views.setViewVisibility(R.id.widget_next_color, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_next_content, View.VISIBLE)
+                views.setViewVisibility(R.id.widget_next_empty, View.GONE)
 
-            // Title
-            views.setTextViewText(R.id.widget_next_title, nextEvent.summary)
+                // Title
+                views.setTextViewText(R.id.widget_next_title, nextEvent.summary)
 
-            // Calendar color
-            val color = colorMap[nextEvent.calendarId] ?: Color.parseColor("#3B9FD9")
-            views.setInt(R.id.widget_next_color, "setBackgroundColor", color)
+                // Calendar color
+                val color = colorMap[nextEvent.calendarId] ?: Color.parseColor("#3B9FD9")
+                views.setInt(R.id.widget_next_color, "setBackgroundColor", color)
 
-            // Time - relative or absolute
-            val timeText = formatRelativeTime(context, nextEvent.dtStart, nextEvent.dtEnd)
-            views.setTextViewText(R.id.widget_next_time, timeText)
+                // Time - relative or absolute
+                val timeText = formatRelativeTime(context, nextEvent.dtStart, nextEvent.dtEnd)
+                views.setTextViewText(R.id.widget_next_time, timeText)
 
-            // Location
-            if (!nextEvent.location.isNullOrBlank()) {
-                views.setTextViewText(R.id.widget_next_location, nextEvent.location)
-                views.setViewVisibility(R.id.widget_next_location, View.VISIBLE)
+                // Location
+                if (!nextEvent.location.isNullOrBlank()) {
+                    views.setTextViewText(R.id.widget_next_location, nextEvent.location)
+                    views.setViewVisibility(R.id.widget_next_location, View.VISIBLE)
+                } else {
+                    views.setViewVisibility(R.id.widget_next_location, View.GONE)
+                }
+
+                // Click → open event detail
+                val eventIntent = Intent(context, MainActivity::class.java).apply {
+                    action = NotificationHelper.ACTION_VIEW_EVENT
+                    putExtra(NotificationHelper.EXTRA_EVENT_ID, nextEvent.uid)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val eventPendingIntent = PendingIntent.getActivity(
+                    context,
+                    widgetId + 2000,
+                    eventIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_next_root, eventPendingIntent)
             } else {
-                views.setViewVisibility(R.id.widget_next_location, View.GONE)
-            }
+                // Empty state
+                views.setViewVisibility(R.id.widget_next_color, View.GONE)
+                views.setViewVisibility(R.id.widget_next_content, View.GONE)
+                views.setViewVisibility(R.id.widget_next_empty, View.VISIBLE)
 
-            // Click → open event detail
-            val eventIntent = Intent(context, MainActivity::class.java).apply {
-                action = NotificationHelper.ACTION_VIEW_EVENT
-                putExtra(NotificationHelper.EXTRA_EVENT_ID, nextEvent.uid)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // Click → open calendar
+                val calendarIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val calendarPendingIntent = PendingIntent.getActivity(
+                    context,
+                    widgetId + 2000,
+                    calendarIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_next_root, calendarPendingIntent)
             }
-            val eventPendingIntent = PendingIntent.getActivity(
-                context,
-                widgetId + 2000,
-                eventIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_next_root, eventPendingIntent)
-        } else {
-            // Empty state
+        } catch (e: Exception) {
+            // Show empty state on error
             views.setViewVisibility(R.id.widget_next_color, View.GONE)
             views.setViewVisibility(R.id.widget_next_content, View.GONE)
             views.setViewVisibility(R.id.widget_next_empty, View.VISIBLE)
-
-            // Click → open calendar
-            val calendarIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            val calendarPendingIntent = PendingIntent.getActivity(
-                context,
-                widgetId + 2000,
-                calendarIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_next_root, calendarPendingIntent)
+        } finally {
+            db.close()
         }
 
         return views
