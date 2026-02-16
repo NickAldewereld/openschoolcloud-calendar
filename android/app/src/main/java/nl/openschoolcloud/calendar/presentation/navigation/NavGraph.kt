@@ -32,11 +32,13 @@ import nl.openschoolcloud.calendar.presentation.screens.event.EventDetailScreen
 import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsScreen
+import nl.openschoolcloud.calendar.presentation.screens.splash.SplashScreen
 
 /**
  * Navigation routes
  */
 sealed class Route(val route: String) {
+    object Splash : Route("splash")
     object Login : Route("login")
     object Calendar : Route("calendar")
     object EventDetail : Route("event/{eventId}") {
@@ -58,14 +60,31 @@ sealed class Route(val route: String) {
 
 @Composable
 fun AppNavigation(
-    startDestination: String = Route.Login.route
+    hasAccount: Boolean = false
 ) {
     val navController = rememberNavController()
-    
+
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Route.Splash.route
     ) {
+        // Branded splash screen
+        composable(Route.Splash.route) {
+            SplashScreen(
+                hasAccount = hasAccount,
+                onNavigateToCalendar = {
+                    navController.navigate(Route.Calendar.route) {
+                        popUpTo(Route.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Route.Login.route) {
+                        popUpTo(Route.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // Login / Onboarding
         composable(Route.Login.route) {
             LoginScreen(

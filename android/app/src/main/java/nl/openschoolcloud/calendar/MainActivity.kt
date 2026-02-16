@@ -29,7 +29,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.presentation.navigation.AppNavigation
-import nl.openschoolcloud.calendar.presentation.navigation.Route
 import nl.openschoolcloud.calendar.presentation.theme.OpenSchoolCloudCalendarTheme
 import javax.inject.Inject
 
@@ -46,15 +45,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Determine start destination based on whether there are existing accounts
-        val startDestination = try {
-            if (credentialStorage.hasAnyAccount()) {
-                Route.Calendar.route
-            } else {
-                Route.Login.route
-            }
+        val hasAccount = try {
+            credentialStorage.hasAnyAccount()
         } catch (e: Exception) {
-            Route.Login.route
+            false
         }
 
         setContent {
@@ -63,7 +57,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(startDestination = startDestination)
+                    AppNavigation(hasAccount = hasAccount)
                 }
             }
         }
