@@ -281,6 +281,17 @@
     <string name="widget_in_minutes">Over %d min</string>
     <string name="widget_now">Nu</string>
 
+    <!-- Onboarding -->
+    <string name="onboarding_privacy_title">Privacy voorop</string>
+    <string name="onboarding_privacy_description">Geen Google, geen tracking, geen advertenties. Jouw data blijft van jou — veilig opgeslagen in Nederland.</string>
+    <string name="onboarding_sync_title">Synchroniseer met je schoolcloud</string>
+    <string name="onboarding_sync_description">Verbind met je Nextcloud-server via CalDAV. Al je agenda\'s direct beschikbaar, altijd up-to-date.</string>
+    <string name="onboarding_features_title">Alles in één agenda</string>
+    <string name="onboarding_features_description">Lesroosters, afspraken en herinneringen op één plek. Met widgets, meldingen en snel afspraken aanmaken.</string>
+    <string name="onboarding_skip">Overslaan</string>
+    <string name="onboarding_next">Volgende</string>
+    <string name="onboarding_start">Aan de slag</string>
+
     <!-- Crash reporting -->
     <string name="crash_dialog_title">OSC Calendar is gestopt</string>
     <string name="crash_dialog_text">Er is een onverwachte fout opgetreden. Wil je een foutrapport versturen via e-mail? Er worden geen persoonlijke gegevens meegestuurd.</string>

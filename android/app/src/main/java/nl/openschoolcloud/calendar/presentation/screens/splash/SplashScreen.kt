@@ -52,7 +52,9 @@ import nl.openschoolcloud.calendar.R
 @Composable
 fun SplashScreen(
     hasAccount: Boolean,
+    onboardingCompleted: Boolean = false,
     onNavigateToCalendar: () -> Unit,
+    onNavigateToOnboarding: () -> Unit = {},
     onNavigateToLogin: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -65,10 +67,10 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         visible = true
         delay(2000)
-        if (hasAccount) {
-            onNavigateToCalendar()
-        } else {
-            onNavigateToLogin()
+        when {
+            hasAccount -> onNavigateToCalendar()
+            !onboardingCompleted -> onNavigateToOnboarding()
+            else -> onNavigateToLogin()
         }
     }
 

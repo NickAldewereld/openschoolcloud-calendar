@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
+import nl.openschoolcloud.calendar.data.local.AppPreferences
 import nl.openschoolcloud.calendar.data.remote.auth.CredentialStorage
 import nl.openschoolcloud.calendar.presentation.navigation.AppNavigation
 import nl.openschoolcloud.calendar.presentation.theme.OpenSchoolCloudCalendarTheme
@@ -37,6 +38,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var credentialStorage: CredentialStorage
+
+    @Inject
+    lateinit var appPreferences: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
@@ -50,6 +54,7 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             false
         }
+        val onboardingCompleted = appPreferences.onboardingCompleted
 
         setContent {
             OpenSchoolCloudCalendarTheme {
@@ -57,7 +62,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(hasAccount = hasAccount)
+                    AppNavigation(
+                        hasAccount = hasAccount,
+                        onboardingCompleted = onboardingCompleted
+                    )
                 }
             }
         }

@@ -50,12 +50,22 @@ class AppPreferences @Inject constructor(
         get() = prefs.getInt(KEY_DEFAULT_REMINDER, DEFAULT_REMINDER_MINUTES)
         set(value) = prefs.edit().putInt(KEY_DEFAULT_REMINDER, value).apply()
 
+    var onboardingCompleted: Boolean
+        get() = prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+        set(value) = prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, value).apply()
+
+    var promoDismissed: Boolean
+        get() = prefs.getBoolean(KEY_PROMO_DISMISSED, false)
+        set(value) = prefs.edit().putBoolean(KEY_PROMO_DISMISSED, value).apply()
+
     companion object {
         private const val KEY_SYNC_INTERVAL = "sync_interval_minutes"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_LAST_SYNC = "last_sync_timestamp"
         private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
         private const val KEY_DEFAULT_REMINDER = "default_reminder_minutes"
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_PROMO_DISMISSED = "promo_dismissed"
 
         const val DEFAULT_SYNC_INTERVAL = 60L
         const val DEFAULT_REMINDER_MINUTES = 15
