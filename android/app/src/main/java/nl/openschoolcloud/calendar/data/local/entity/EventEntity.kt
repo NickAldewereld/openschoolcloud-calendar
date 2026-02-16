@@ -63,5 +63,8 @@ data class EventEntity(
     val lastModified: Long?,
     val etag: String?,
     val syncStatus: String, // SYNCED, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE
-    val rawIcal: String? // Original iCal data for conflict resolution
+    val rawIcal: String?, // Original iCal data for conflict resolution
+    val isLearningAgenda: Boolean = false,
+    val learningGoal: String? = null,
+    val learningNeeds: String? = null
 )

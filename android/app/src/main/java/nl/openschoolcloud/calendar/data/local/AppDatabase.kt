@@ -28,11 +28,13 @@ import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
+import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
 import nl.openschoolcloud.calendar.data.local.entity.AccountEntity
 import nl.openschoolcloud.calendar.data.local.entity.CalendarEntity
 import nl.openschoolcloud.calendar.data.local.entity.EventEntity
 import nl.openschoolcloud.calendar.data.local.entity.HolidayCalendarEntity
 import nl.openschoolcloud.calendar.data.local.entity.HolidayEventEntity
+import nl.openschoolcloud.calendar.data.local.entity.ReflectionEntity
 
 /**
  * Room database for OpenSchoolCloud Calendar
@@ -43,9 +45,10 @@ import nl.openschoolcloud.calendar.data.local.entity.HolidayEventEntity
         CalendarEntity::class,
         EventEntity::class,
         HolidayCalendarEntity::class,
-        HolidayEventEntity::class
+        HolidayEventEntity::class,
+        ReflectionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -54,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun calendarDao(): CalendarDao
     abstract fun eventDao(): EventDao
     abstract fun holidayDao(): HolidayDao
+    abstract fun reflectionDao(): ReflectionDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -91,6 +95,32 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_holiday_events_calendarId` ON `holiday_events` (`calendarId`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_holiday_events_date` ON `holiday_events` (`date`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_holiday_events_endDate` ON `holiday_events` (`endDate`)")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add learning agenda fields to events table
+                database.execSQL("ALTER TABLE events ADD COLUMN isLearningAgenda INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE events ADD COLUMN learningGoal TEXT DEFAULT NULL")
+                database.execSQL("ALTER TABLE events ADD COLUMN learningNeeds TEXT DEFAULT NULL")
+
+                // Create reflection_entries table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `reflection_entries` (
+                        `id` TEXT NOT NULL,
+                        `eventId` TEXT NOT NULL,
+                        `mood` INTEGER NOT NULL,
+                        `whatWentWell` TEXT,
+                        `whatToDoBetter` TEXT,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`),
+                        FOREIGN KEY(`eventId`) REFERENCES `events`(`uid`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_reflection_entries_eventId` ON `reflection_entries` (`eventId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_reflection_entries_createdAt` ON `reflection_entries` (`createdAt`)")
             }
         }
     }

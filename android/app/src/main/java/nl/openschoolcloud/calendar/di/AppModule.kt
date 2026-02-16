@@ -31,6 +31,7 @@ import nl.openschoolcloud.calendar.data.local.dao.AccountDao
 import nl.openschoolcloud.calendar.data.local.dao.CalendarDao
 import nl.openschoolcloud.calendar.data.local.dao.EventDao
 import nl.openschoolcloud.calendar.data.local.dao.HolidayDao
+import nl.openschoolcloud.calendar.data.local.dao.ReflectionDao
 import nl.openschoolcloud.calendar.data.repository.AccountRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.BookingRepositoryImpl
 import nl.openschoolcloud.calendar.data.repository.CalendarRepositoryImpl
@@ -79,7 +80,7 @@ object AppModule {
             AppDatabase::class.java,
             "openschoolcloud_calendar.db"
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 
@@ -94,6 +95,9 @@ object AppModule {
 
     @Provides
     fun provideHolidayDao(db: AppDatabase): HolidayDao = db.holidayDao()
+
+    @Provides
+    fun provideReflectionDao(db: AppDatabase): ReflectionDao = db.reflectionDao()
 }
 
 /**

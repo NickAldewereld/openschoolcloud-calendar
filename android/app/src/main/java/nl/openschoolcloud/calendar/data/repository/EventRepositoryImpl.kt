@@ -186,7 +186,10 @@ private fun EventEntity.toDomain(): Event {
         created = created?.let { Instant.ofEpochMilli(it) },
         lastModified = lastModified?.let { Instant.ofEpochMilli(it) },
         etag = etag,
-        syncStatus = try { SyncStatus.valueOf(syncStatus) } catch (e: Exception) { SyncStatus.SYNCED }
+        syncStatus = try { SyncStatus.valueOf(syncStatus) } catch (e: Exception) { SyncStatus.SYNCED },
+        isLearningAgenda = isLearningAgenda,
+        learningGoal = learningGoal,
+        learningNeeds = learningNeeds
     )
 }
 
@@ -241,7 +244,10 @@ private fun Event.toEntity(): EventEntity {
         lastModified = lastModified?.toEpochMilli(),
         etag = etag,
         syncStatus = syncStatus.name,
-        rawIcal = null
+        rawIcal = null,
+        isLearningAgenda = isLearningAgenda,
+        learningGoal = learningGoal,
+        learningNeeds = learningNeeds
     )
 }
 
