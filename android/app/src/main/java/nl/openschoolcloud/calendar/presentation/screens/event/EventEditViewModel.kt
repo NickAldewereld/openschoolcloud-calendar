@@ -104,7 +104,10 @@ class EventEditViewModel @Inject constructor(
                             endTime = endZoned?.toLocalTime() ?: startZoned.toLocalTime().plusHours(1),
                             allDay = event.allDay,
                             selectedCalendarId = event.calendarId,
-                            originalEvent = event
+                            originalEvent = event,
+                            isLearningAgenda = event.isLearningAgenda,
+                            learningGoal = event.learningGoal ?: "",
+                            learningNeeds = event.learningNeeds ?: ""
                         )
                     }
                 } else {
@@ -186,6 +189,18 @@ class EventEditViewModel @Inject constructor(
         _uiState.update { it.copy(selectedCalendarId = calendarId, hasChanges = true) }
     }
 
+    fun onLearningAgendaToggle(enabled: Boolean) {
+        _uiState.update { it.copy(isLearningAgenda = enabled, hasChanges = true) }
+    }
+
+    fun onLearningGoalChange(goal: String) {
+        _uiState.update { it.copy(learningGoal = goal, hasChanges = true) }
+    }
+
+    fun onLearningNeedsChange(needs: String) {
+        _uiState.update { it.copy(learningNeeds = needs, hasChanges = true) }
+    }
+
     fun save(onSuccess: () -> Unit) {
         val state = _uiState.value
 
@@ -210,16 +225,20 @@ class EventEditViewModel @Inject constructor(
                 .atZone(zoneId).toInstant()
 
             if (isEditing && state.originalEvent != null) {
+                val description = buildDescription(state)
                 val updated = state.originalEvent.copy(
                     summary = state.title,
                     location = state.location.ifBlank { null },
-                    description = state.description.ifBlank { null },
+                    description = description,
                     dtStart = startInstant,
                     dtEnd = endInstant,
                     allDay = state.allDay,
                     calendarId = calendarId,
                     syncStatus = SyncStatus.PENDING_UPDATE,
-                    lastModified = Instant.now()
+                    lastModified = Instant.now(),
+                    isLearningAgenda = state.isLearningAgenda,
+                    learningGoal = state.learningGoal.ifBlank { null },
+                    learningNeeds = state.learningNeeds.ifBlank { null }
                 )
 
                 val result = eventRepository.updateEvent(updated)
@@ -235,17 +254,21 @@ class EventEditViewModel @Inject constructor(
                     }
                 )
             } else {
+                val description = buildDescription(state)
                 val event = Event(
                     uid = UUID.randomUUID().toString(),
                     calendarId = calendarId,
                     summary = state.title,
                     location = state.location.ifBlank { null },
-                    description = state.description.ifBlank { null },
+                    description = description,
                     dtStart = startInstant,
                     dtEnd = endInstant,
                     allDay = state.allDay,
                     syncStatus = SyncStatus.PENDING_CREATE,
-                    created = Instant.now()
+                    created = Instant.now(),
+                    isLearningAgenda = state.isLearningAgenda,
+                    learningGoal = state.learningGoal.ifBlank { null },
+                    learningNeeds = state.learningNeeds.ifBlank { null }
                 )
 
                 val result = eventRepository.createEvent(event)
@@ -261,6 +284,21 @@ class EventEditViewModel @Inject constructor(
                     }
                 )
             }
+        }
+    }
+
+    private fun buildDescription(state: EventEditUiState): String? {
+        return if (state.isLearningAgenda) {
+            val parts = mutableListOf<String>()
+            if (state.learningGoal.isNotBlank()) {
+                parts.add("Wat ga ik doen: ${state.learningGoal}")
+            }
+            if (state.learningNeeds.isNotBlank()) {
+                parts.add("Wat heb ik nodig: ${state.learningNeeds}")
+            }
+            parts.joinToString("\n\n").ifBlank { null }
+        } else {
+            state.description.ifBlank { null }
         }
     }
 
@@ -284,7 +322,10 @@ data class EventEditUiState(
     val availableCalendars: List<Calendar> = emptyList(),
     val hasChanges: Boolean = false,
     val originalEvent: Event? = null,
-    val error: String? = null
+    val error: String? = null,
+    val isLearningAgenda: Boolean = false,
+    val learningGoal: String = "",
+    val learningNeeds: String = ""
 ) {
     fun formatStartDate(): String =
         startDate.format(DateTimeFormatter.ofPattern("EEE d MMM yyyy", java.util.Locale("nl")))

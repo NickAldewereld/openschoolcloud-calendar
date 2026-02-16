@@ -316,6 +316,50 @@
     <string name="holiday_cat_chinese">Chinese en Aziatische feestdagen</string>
     <string name="holiday_cat_international">Internationale dagen</string>
 
+    <!-- Leeragenda & Reflectie -->
+    <string name="learning_agenda_toggle">Leeragenda</string>
+    <string name="learning_goal_label">Wat ga ik doen?</string>
+    <string name="learning_goal_hint">Beschrijf je leerdoel</string>
+    <string name="learning_needs_label">Wat heb ik nodig?</string>
+    <string name="learning_needs_hint">Welke hulpmiddelen of hulp heb je nodig?</string>
+    <string name="learning_agenda_badge">Leeragenda</string>
+    <string name="reflection_title">Hoe ging %s?</string>
+    <string name="reflection_subtitle">Neem even de tijd om terug te kijken</string>
+    <string name="reflection_what_went_well">Wat ging goed?</string>
+    <string name="reflection_what_went_well_hint">Waar ben je trots op?</string>
+    <string name="reflection_what_to_do_better">Wat kan beter?</string>
+    <string name="reflection_what_to_do_better_hint">Wat zou je de volgende keer anders doen?</string>
+    <string name="reflection_save">Opslaan</string>
+    <string name="reflection_how_did_it_go">Hoe ging het?</string>
+    <string name="reflection_mood_1">Moeilijk</string>
+    <string name="reflection_mood_2">Niet zo goed</string>
+    <string name="reflection_mood_3">Oké</string>
+    <string name="reflection_mood_4">Goed</string>
+    <string name="reflection_mood_5">Super!</string>
+    <string name="reflection_summary_title">Reflectie</string>
+
+    <!-- Weekoverzicht -->
+    <string name="week_review_title">Weekoverzicht</string>
+    <string name="week_review_week">Week %d</string>
+    <string name="week_review_average_mood">Gemiddelde stemming</string>
+    <string name="week_review_count">%1$d van %2$d reflecties ingevuld</string>
+    <string name="week_review_encouragement_great">Geweldig! Je bent goed bezig!</string>
+    <string name="week_review_encouragement_good">Goed gedaan deze week!</string>
+    <string name="week_review_encouragement_ok">Volgende week weer een kans!</string>
+    <string name="week_review_empty">Geen reflecties deze week</string>
+    <string name="week_review_empty_hint">Maak afspraken met leeragenda om reflecties in te vullen</string>
+
+    <!-- Reflectie meldingen -->
+    <string name="notification_channel_reflections">Reflecties</string>
+    <string name="notification_channel_reflections_desc">Herinneringen om terug te kijken op afspraken</string>
+    <string name="notification_reflection_title">Hoe ging %s?</string>
+    <string name="notification_reflection_text">Neem even de tijd om terug te kijken</string>
+
+    <!-- Instellingen leeragenda -->
+    <string name="settings_learning_agenda">Leeragenda &amp; Reflectie</string>
+    <string name="settings_reflection_notifications">Reflectieherinneringen</string>
+    <string name="settings_reflection_notifications_desc">Ontvang een herinnering na afloop van leeragenda-afspraken</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

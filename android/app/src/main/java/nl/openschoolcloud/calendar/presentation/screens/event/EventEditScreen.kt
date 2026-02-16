@@ -42,7 +42,10 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -184,6 +187,9 @@ fun EventEditScreen(
                 onDescriptionChange = viewModel::onDescriptionChange,
                 onAllDayToggle = viewModel::onAllDayToggle,
                 onCalendarSelected = viewModel::onCalendarSelected,
+                onLearningAgendaToggle = viewModel::onLearningAgendaToggle,
+                onLearningGoalChange = viewModel::onLearningGoalChange,
+                onLearningNeedsChange = viewModel::onLearningNeedsChange,
                 onStartDateClick = { showStartDatePicker = true },
                 onStartTimeClick = { showStartTimePicker = true },
                 onEndDateClick = { showEndDatePicker = true },
@@ -316,6 +322,9 @@ private fun EventEditForm(
     onDescriptionChange: (String) -> Unit,
     onAllDayToggle: (Boolean) -> Unit,
     onCalendarSelected: (String) -> Unit,
+    onLearningAgendaToggle: (Boolean) -> Unit,
+    onLearningGoalChange: (String) -> Unit,
+    onLearningNeedsChange: (String) -> Unit,
     onStartDateClick: () -> Unit,
     onStartTimeClick: () -> Unit,
     onEndDateClick: () -> Unit,
@@ -456,23 +465,86 @@ private fun EventEditForm(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
         )
 
-        // Description
-        OutlinedTextField(
-            value = uiState.description,
-            onValueChange = onDescriptionChange,
-            label = { Text(stringResource(R.string.event_description)) },
-            placeholder = { Text(stringResource(R.string.event_description_hint)) },
-            leadingIcon = {
-                Icon(Icons.Default.Description, contentDescription = null)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 100.dp),
-            maxLines = 5,
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences
+        // Learning agenda toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.School,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.learning_agenda_toggle),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            Switch(
+                checked = uiState.isLearningAgenda,
+                onCheckedChange = onLearningAgendaToggle
             )
-        )
+        }
+
+        if (uiState.isLearningAgenda) {
+            // Learning goal
+            OutlinedTextField(
+                value = uiState.learningGoal,
+                onValueChange = onLearningGoalChange,
+                label = { Text(stringResource(R.string.learning_goal_label)) },
+                placeholder = { Text(stringResource(R.string.learning_goal_hint)) },
+                leadingIcon = {
+                    Icon(Icons.Default.Flag, contentDescription = null)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 80.dp),
+                maxLines = 3,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                )
+            )
+
+            // Learning needs
+            OutlinedTextField(
+                value = uiState.learningNeeds,
+                onValueChange = onLearningNeedsChange,
+                label = { Text(stringResource(R.string.learning_needs_label)) },
+                placeholder = { Text(stringResource(R.string.learning_needs_hint)) },
+                leadingIcon = {
+                    Icon(Icons.Default.Lightbulb, contentDescription = null)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 80.dp),
+                maxLines = 3,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                )
+            )
+        } else {
+            // Description (only shown when not in learning agenda mode)
+            OutlinedTextField(
+                value = uiState.description,
+                onValueChange = onDescriptionChange,
+                label = { Text(stringResource(R.string.event_description)) },
+                placeholder = { Text(stringResource(R.string.event_description_hint)) },
+                leadingIcon = {
+                    Icon(Icons.Default.Description, contentDescription = null)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 100.dp),
+                maxLines = 5,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                )
+            )
+        }
 
         // Calendar selector
         if (uiState.availableCalendars.isNotEmpty()) {
