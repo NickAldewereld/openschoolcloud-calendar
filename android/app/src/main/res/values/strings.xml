@@ -349,6 +349,12 @@
     <string name="week_review_empty">Geen reflecties deze week</string>
     <string name="week_review_empty_hint">Maak afspraken met leeragenda om reflecties in te vullen</string>
 
+    <!-- Weekplanning meldingen -->
+    <string name="notification_channel_planning">Weekplanning</string>
+    <string name="notification_channel_planning_desc">Herinnering om je week te plannen</string>
+    <string name="notification_planning_title">Plan je week!</string>
+    <string name="notification_planning_text">Wat zijn je belangrijkste taken deze week?</string>
+
     <!-- Reflectie meldingen -->
     <string name="notification_channel_reflections">Reflecties</string>
     <string name="notification_channel_reflections_desc">Herinneringen om terug te kijken op afspraken</string>

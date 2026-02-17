@@ -68,6 +68,7 @@
                 <action android:name="nl.openschoolcloud.calendar.ACTION_SHOW_REMINDER" />
                 <action android:name="nl.openschoolcloud.calendar.ACTION_SNOOZE" />
                 <action android:name="nl.openschoolcloud.calendar.ACTION_SHOW_REFLECTION" />
+                <action android:name="nl.openschoolcloud.calendar.ACTION_PLAN_WEEK" />
             </intent-filter>
         </receiver>
 

@@ -46,6 +46,7 @@ class ReminderReceiver : BroadcastReceiver() {
             ACTION_SHOW_REMINDER -> handleShowReminder(intent)
             NotificationHelper.ACTION_SNOOZE -> handleSnooze(intent)
             ACTION_SHOW_REFLECTION -> handleShowReflection(intent)
+            NotificationHelper.ACTION_PLAN_WEEK -> notificationHelper.showPlanningReminder()
             else -> { /* ignore unknown actions */ }
         }
     }

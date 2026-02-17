@@ -45,9 +45,11 @@ class NotificationHelper @Inject constructor(
     companion object {
         const val CHANNEL_REMINDERS = "reminders"
         const val CHANNEL_REFLECTIONS = "reflections"
+        const val CHANNEL_PLANNING = "planning"
         const val ACTION_VIEW_EVENT = "nl.openschoolcloud.calendar.ACTION_VIEW_EVENT"
         const val ACTION_SNOOZE = "nl.openschoolcloud.calendar.ACTION_SNOOZE"
         const val ACTION_REFLECT = "nl.openschoolcloud.calendar.ACTION_REFLECT"
+        const val ACTION_PLAN_WEEK = "nl.openschoolcloud.calendar.ACTION_PLAN_WEEK"
         const val EXTRA_EVENT_ID = "event_id"
         const val EXTRA_EVENT_TITLE = "event_title"
         const val EXTRA_EVENT_TIME = "event_time"
@@ -176,6 +178,45 @@ class NotificationHelper @Inject constructor(
             .build()
 
         NotificationManagerCompat.from(context).notify(eventId.hashCode() + 200, notification)
+    }
+
+    fun createPlanningChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_PLANNING,
+            context.getString(R.string.notification_channel_planning),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = context.getString(R.string.notification_channel_planning_desc)
+        }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+    }
+
+    fun showPlanningReminder() {
+        if (!hasNotificationPermission()) return
+
+        val viewIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_PLAN_WEEK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val viewPendingIntent = PendingIntent.getActivity(
+            context,
+            ACTION_PLAN_WEEK.hashCode(),
+            viewIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_PLANNING)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.notification_planning_title))
+            .setContentText(context.getString(R.string.notification_planning_text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(viewPendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(ACTION_PLAN_WEEK.hashCode(), notification)
     }
 
     fun cancelNotification(eventId: String) {

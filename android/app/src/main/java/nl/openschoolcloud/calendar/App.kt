@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import nl.openschoolcloud.calendar.domain.repository.HolidayRepository
 import nl.openschoolcloud.calendar.notification.NotificationHelper
+import nl.openschoolcloud.calendar.notification.PlanningReminderWorker
 import nl.openschoolcloud.calendar.notification.ReminderWorker
 import org.acra.config.dialog
 import org.acra.config.mailSender
@@ -82,7 +83,9 @@ class App : Application(), Configuration.Provider {
         super.onCreate()
         notificationHelper.createNotificationChannel()
         notificationHelper.createReflectionChannel()
+        notificationHelper.createPlanningChannel()
         ReminderWorker.schedule(this)
+        PlanningReminderWorker.schedule(this)
 
         // Seed holiday calendars on background thread
         CoroutineScope(Dispatchers.IO).launch {
