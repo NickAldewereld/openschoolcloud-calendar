@@ -7,6 +7,35 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [1.4.0] - 2026-02-17
+
+### Sprint 8: UX Polish, Feedback & Theme
+
+#### Toegevoegd
+- **Overflow menu**: TopAppBar opgeruimd met DropdownMenu
+  - Alleen "Vandaag" als primaire actie zichtbaar
+  - Synchroniseren, Weekvoortgang, Weekoverzicht, Afspraak-links, Feedback en Instellingen in overflow (⋮)
+  - Sync-indicator inline zichtbaar tijdens synchronisatie
+- **Feedback systeem**: In-app feedback via e-mail
+  - Categorieselectie: Bug, Idee/Verzoek, Gebruikservaring, Overig
+  - Gestructureerd e-mailformat via Android ACTION_SENDTO intent
+  - Privacy-vriendelijk: alleen door gebruiker ingevulde tekst wordt verstuurd
+- **Dark mode verbeterd**: Blauw-getint donker thema
+  - Achtergronden #1A1A2E en #252540 (was grijs #121212)
+  - Alle hardcoded kleuren vervangen door MaterialTheme tokens
+  - ThemeMode parameter (systeem/licht/donker) doorverbonden vanuit voorkeuren
+
+#### Technisch
+- `CalendarTopBar` refactor: 6 IconButtons → 1 DropdownMenu
+- `OpenSchoolCloudCalendarTheme` accepteert `themeMode: String` i.p.v. `darkTheme: Boolean`
+- `MainActivity` leest `appPreferences.themeMode` en geeft door aan theme
+- Hardcoded Color() waarden verwijderd uit SplashScreen, OnboardingScreen, EventDetailScreen, SettingsScreen, HolidayDetailSheet
+- `FeedbackScreen` + `FeedbackViewModel` met `@HiltViewModel`
+- `Route.Feedback` in NavGraph
+- Versie: 1.4.0 (versionCode 6)
+
+---
+
 ## [1.3.0] - 2026-02-17
 
 ### Sprint 7: Week Vooruit Planner
@@ -224,7 +253,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## Nog Te Doen
 
-### Sprint 8: Seizoenskaarten & Ontdek-Feed
+### Sprint 9: Seizoenskaarten & Ontdek-Feed
 - [ ] Contextuele ontdekkaarten per seizoen en schooljaar
 - [ ] Natuur, schooljaar-momenten, wereldoriëntatie, fun facts
 - [ ] Afwijsbaar, niet-storend in dagweergave
