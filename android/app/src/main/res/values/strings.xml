@@ -366,6 +366,43 @@
     <string name="settings_reflection_notifications">Reflectieherinneringen</string>
     <string name="settings_reflection_notifications_desc">Ontvang een herinnering na afloop van leeragenda-afspraken</string>
 
+    <!-- Weekplanning -->
+    <string name="planning_title">Plan je week</string>
+    <string name="planning_week_number">Week %d</string>
+    <string name="planning_step_tasks">Taken</string>
+    <string name="planning_step_days">Dagen</string>
+    <string name="planning_step_confirm">Bevestig</string>
+    <string name="planning_add_tasks_title">Wat zijn je belangrijkste taken?</string>
+    <string name="planning_add_tasks_subtitle">Kies maximaal 10 taken voor deze week</string>
+    <string name="planning_task_label">Taak %d</string>
+    <string name="planning_add_task">Taak toevoegen</string>
+    <string name="planning_next">Volgende</string>
+    <string name="planning_previous">Vorige</string>
+    <string name="planning_assign_title">Wanneer doe je wat?</string>
+    <string name="planning_assign_subtitle">Kies een dag voor elke taak</string>
+    <string name="planning_confirm_title">Zo ziet je week eruit</string>
+    <string name="planning_confirm">Bevestig</string>
+    <string name="planning_complete_title">Je week is gepland!</string>
+    <string name="planning_complete_subtitle">Je taken staan in je agenda. Veel succes!</string>
+    <string name="planning_streak">Je plant al %d weken op rij! \uD83D\uDD25</string>
+    <string name="planning_done">Klaar</string>
+    <string name="planning_tasks_section">Taken</string>
+
+    <!-- Weekvoortgang -->
+    <string name="progress_title">Weekvoortgang</string>
+    <string name="progress_summary">%1$d van %2$d taken afgerond</string>
+    <string name="progress_plan_week">Plan je week</string>
+    <string name="progress_no_tasks">Nog geen taken deze week</string>
+    <string name="progress_no_tasks_hint">Plan je week om taken toe te voegen</string>
+    <string name="progress_streak">Je plant al %d weken op rij! \uD83D\uDD25</string>
+
+    <!-- Weekplanning instellingen -->
+    <string name="settings_planning">Weekplanning</string>
+    <string name="settings_planning_notifications">Planningsherinnering</string>
+    <string name="settings_planning_notifications_desc">Ontvang een herinnering om je week te plannen</string>
+    <string name="settings_planning_day">Planningsdag</string>
+    <string name="settings_planning_time">Planningstijd</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>
