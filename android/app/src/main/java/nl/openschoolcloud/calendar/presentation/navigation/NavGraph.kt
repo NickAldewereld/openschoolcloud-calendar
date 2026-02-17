@@ -61,6 +61,7 @@ sealed class Route(val route: String) {
     object HolidayDiscover : Route("holidays")
     object WeekPlanning : Route("week-planning")
     object WeekProgress : Route("week-progress")
+    object Feedback : Route("feedback")
     object Booking : Route("booking")
     object QrCode : Route("qrcode?url={url}&name={name}") {
         fun createRoute(url: String, name: String) =
@@ -144,6 +145,9 @@ fun AppNavigation(
                 },
                 onWeekProgressClick = {
                     navController.navigate(Route.WeekProgress.route)
+                },
+                onFeedbackClick = {
+                    navController.navigate(Route.Feedback.route)
                 }
             )
         }

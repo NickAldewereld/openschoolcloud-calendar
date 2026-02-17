@@ -403,6 +403,14 @@
     <string name="settings_planning_day">Planningsdag</string>
     <string name="settings_planning_time">Planningstijd</string>
 
+    <!-- Overflow menu -->
+    <string name="menu_sync">Synchroniseren</string>
+    <string name="menu_week_progress">Weekvoortgang</string>
+    <string name="menu_week_review">Weekoverzicht</string>
+    <string name="menu_booking">Afspraak-links</string>
+    <string name="menu_feedback">Feedback geven</string>
+    <string name="menu_settings">Instellingen</string>
+
     <!-- Algemene acties -->
     <string name="action_ok">OK</string>
     <string name="action_cancel">Annuleren</string>

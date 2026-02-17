@@ -45,17 +45,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -111,6 +109,7 @@ fun CalendarScreen(
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit = {},
     onWeekProgressClick: () -> Unit = {},
+    onFeedbackClick: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -161,7 +160,8 @@ fun CalendarScreen(
                 onSettingsClick = onSettingsClick,
                 onBookingClick = onBookingClick,
                 onWeekReviewClick = onWeekReviewClick,
-                onWeekProgressClick = onWeekProgressClick
+                onWeekProgressClick = onWeekProgressClick,
+                onFeedbackClick = onFeedbackClick
             )
         },
         floatingActionButton = {
@@ -257,7 +257,8 @@ private fun CalendarTopBar(
     onSettingsClick: () -> Unit,
     onBookingClick: () -> Unit,
     onWeekReviewClick: () -> Unit,
-    onWeekProgressClick: () -> Unit
+    onWeekProgressClick: () -> Unit,
+    onFeedbackClick: () -> Unit = {}
 ) {
     val weekEnd = weekStart.plusDays(6)
     val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -271,6 +272,7 @@ private fun CalendarTopBar(
 
     // Week number (ISO standard, used in NL schools)
     val weekNumber = weekStart.get(WeekFields.ISO.weekOfWeekBasedYear())
+    var menuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = {
@@ -303,49 +305,81 @@ private fun CalendarTopBar(
             }
         },
         actions = {
+            // Primary action: Today button
             TextButton(onClick = onToday) {
                 Text(
                     text = stringResource(R.string.calendar_today),
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
-            IconButton(onClick = onSync, enabled = !isSyncing) {
-                if (isSyncing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
+
+            // Sync indicator (shown inline when syncing)
+            if (isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+
+            // Overflow menu
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
                     Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.settings_sync_now)
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.menu_settings)
                     )
                 }
-            }
-            IconButton(onClick = onWeekProgressClick) {
-                Icon(
-                    Icons.Default.Checklist,
-                    contentDescription = stringResource(R.string.progress_title)
-                )
-            }
-            IconButton(onClick = onWeekReviewClick) {
-                Icon(
-                    Icons.Default.BarChart,
-                    contentDescription = stringResource(R.string.week_review_title)
-                )
-            }
-            IconButton(onClick = onBookingClick) {
-                Icon(
-                    Icons.Default.Link,
-                    contentDescription = stringResource(R.string.booking_title)
-                )
-            }
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.a11y_settings)
-                )
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_sync)) },
+                        onClick = {
+                            menuExpanded = false
+                            onSync()
+                        },
+                        enabled = !isSyncing
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_week_progress)) },
+                        onClick = {
+                            menuExpanded = false
+                            onWeekProgressClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_week_review)) },
+                        onClick = {
+                            menuExpanded = false
+                            onWeekReviewClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_booking)) },
+                        onClick = {
+                            menuExpanded = false
+                            onBookingClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_feedback)) },
+                        onClick = {
+                            menuExpanded = false
+                            onFeedbackClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_settings)) },
+                        onClick = {
+                            menuExpanded = false
+                            onSettingsClick()
+                        }
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
