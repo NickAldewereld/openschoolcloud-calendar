@@ -66,6 +66,30 @@ class AppPreferences @Inject constructor(
         get() = prefs.getBoolean(KEY_REFLECTION_NOTIFICATIONS, true)
         set(value) = prefs.edit().putBoolean(KEY_REFLECTION_NOTIFICATIONS, value).apply()
 
+    var weekPlanningNotificationsEnabled: Boolean
+        get() = prefs.getBoolean(KEY_PLANNING_NOTIFICATIONS, true)
+        set(value) = prefs.edit().putBoolean(KEY_PLANNING_NOTIFICATIONS, value).apply()
+
+    var planningDayOfWeek: Int
+        get() = prefs.getInt(KEY_PLANNING_DAY, 1) // 1 = Monday (ISO DayOfWeek)
+        set(value) = prefs.edit().putInt(KEY_PLANNING_DAY, value).apply()
+
+    var planningTimeHour: Int
+        get() = prefs.getInt(KEY_PLANNING_HOUR, 8)
+        set(value) = prefs.edit().putInt(KEY_PLANNING_HOUR, value).apply()
+
+    var planningTimeMinute: Int
+        get() = prefs.getInt(KEY_PLANNING_MINUTE, 0)
+        set(value) = prefs.edit().putInt(KEY_PLANNING_MINUTE, value).apply()
+
+    var planningLastWeekYear: Int
+        get() = prefs.getInt(KEY_PLANNING_LAST_WEEK_YEAR, 0)
+        set(value) = prefs.edit().putInt(KEY_PLANNING_LAST_WEEK_YEAR, value).apply()
+
+    var planningStreak: Int
+        get() = prefs.getInt(KEY_PLANNING_STREAK, 0)
+        set(value) = prefs.edit().putInt(KEY_PLANNING_STREAK, value).apply()
+
     companion object {
         private const val KEY_SYNC_INTERVAL = "sync_interval_minutes"
         private const val KEY_THEME_MODE = "theme_mode"
@@ -76,6 +100,12 @@ class AppPreferences @Inject constructor(
         private const val KEY_PROMO_DISMISSED = "promo_dismissed"
         private const val KEY_HOLIDAY_SEED_VERSION = "holiday_seed_version"
         private const val KEY_REFLECTION_NOTIFICATIONS = "reflection_notifications_enabled"
+        private const val KEY_PLANNING_NOTIFICATIONS = "planning_notifications_enabled"
+        private const val KEY_PLANNING_DAY = "planning_day_of_week"
+        private const val KEY_PLANNING_HOUR = "planning_time_hour"
+        private const val KEY_PLANNING_MINUTE = "planning_time_minute"
+        private const val KEY_PLANNING_LAST_WEEK_YEAR = "planning_last_week_year"
+        private const val KEY_PLANNING_STREAK = "planning_streak"
 
         const val DEFAULT_SYNC_INTERVAL = 60L
         const val DEFAULT_REMINDER_MINUTES = 15
