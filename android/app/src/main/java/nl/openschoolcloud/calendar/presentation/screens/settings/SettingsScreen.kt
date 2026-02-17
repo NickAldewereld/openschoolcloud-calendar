@@ -337,6 +337,41 @@ fun SettingsScreen(
                 }
             }
 
+            // Week planning section
+            SettingsSection(title = stringResource(R.string.settings_planning)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setPlanningNotificationsEnabled(!uiState.planningNotificationsEnabled) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_planning_notifications),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_planning_notifications_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = uiState.planningNotificationsEnabled,
+                        onCheckedChange = { viewModel.setPlanningNotificationsEnabled(it) }
+                    )
+                }
+                if (uiState.planningNotificationsEnabled) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_planning_day),
+                        value = formatDayOfWeek(uiState.planningDay),
+                        onClick = { viewModel.cyclePlanningDay() }
+                    )
+                }
+            }
+
             // Holiday calendars section
             SettingsSection(title = stringResource(R.string.holiday_settings_section)) {
                 SettingsRow(
@@ -851,6 +886,20 @@ private fun formatThemeMode(mode: String): String {
         AppPreferences.THEME_LIGHT -> stringResource(R.string.settings_dark_mode_light)
         AppPreferences.THEME_DARK -> stringResource(R.string.settings_dark_mode_dark)
         else -> stringResource(R.string.settings_dark_mode_system)
+    }
+}
+
+@Composable
+private fun formatDayOfWeek(isoDay: Int): String {
+    return when (isoDay) {
+        1 -> stringResource(R.string.day_monday)
+        2 -> stringResource(R.string.day_tuesday)
+        3 -> stringResource(R.string.day_wednesday)
+        4 -> stringResource(R.string.day_thursday)
+        5 -> stringResource(R.string.day_friday)
+        6 -> stringResource(R.string.day_saturday)
+        7 -> stringResource(R.string.day_sunday)
+        else -> stringResource(R.string.day_monday)
     }
 }
 

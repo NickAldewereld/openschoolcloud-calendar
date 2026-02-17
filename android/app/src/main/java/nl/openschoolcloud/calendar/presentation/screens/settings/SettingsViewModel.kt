@@ -34,6 +34,7 @@ import nl.openschoolcloud.calendar.domain.model.Account
 import nl.openschoolcloud.calendar.domain.model.Calendar
 import nl.openschoolcloud.calendar.domain.repository.AccountRepository
 import nl.openschoolcloud.calendar.domain.repository.CalendarRepository
+import nl.openschoolcloud.calendar.notification.PlanningReminderWorker
 import nl.openschoolcloud.calendar.notification.ReminderWorker
 import java.time.Instant
 import javax.inject.Inject
@@ -86,7 +87,9 @@ class SettingsViewModel @Inject constructor(
                 lastSyncTime = if (lastSync > 0) Instant.ofEpochMilli(lastSync) else null,
                 notificationsEnabled = appPreferences.notificationsEnabled,
                 defaultReminderMinutes = appPreferences.defaultReminderMinutes,
-                reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled
+                reflectionNotificationsEnabled = appPreferences.reflectionNotificationsEnabled,
+                planningNotificationsEnabled = appPreferences.weekPlanningNotificationsEnabled,
+                planningDay = appPreferences.planningDayOfWeek
             )
         }
     }
@@ -151,6 +154,24 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(reflectionNotificationsEnabled = enabled) }
     }
 
+    fun setPlanningNotificationsEnabled(enabled: Boolean) {
+        appPreferences.weekPlanningNotificationsEnabled = enabled
+        _uiState.update { it.copy(planningNotificationsEnabled = enabled) }
+
+        if (enabled) {
+            PlanningReminderWorker.schedule(appContext)
+        } else {
+            PlanningReminderWorker.cancel(appContext)
+        }
+    }
+
+    fun cyclePlanningDay() {
+        val current = appPreferences.planningDayOfWeek
+        val next = if (current >= 7) 1 else current + 1
+        appPreferences.planningDayOfWeek = next
+        _uiState.update { it.copy(planningDay = next) }
+    }
+
     fun toggleCalendarVisibility(calendarId: String) {
         viewModelScope.launch {
             val calendar = calendarRepository.getCalendar(calendarId) ?: return@launch
@@ -182,6 +203,8 @@ data class SettingsUiState(
     val notificationsEnabled: Boolean = true,
     val defaultReminderMinutes: Int = AppPreferences.DEFAULT_REMINDER_MINUTES,
     val reflectionNotificationsEnabled: Boolean = true,
+    val planningNotificationsEnabled: Boolean = true,
+    val planningDay: Int = 1,
     val showPromo: Boolean = false,
     val error: String? = null
 )

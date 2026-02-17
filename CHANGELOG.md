@@ -7,6 +7,47 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ---
 
+## [1.3.0] - 2026-02-17
+
+### Sprint 7: Week Vooruit Planner
+
+#### Toegevoegd
+- **Weekplanning**: Begeleide 3-stappen planning voor leerlingen
+  - Stap 1: Taken toevoegen (maximaal 10, minimaal 1)
+  - Stap 2: Taken toewijzen aan dagen via dagchips
+  - Stap 3: Bevestigen en opslaan
+- **Taken in agenda**: Taken verschijnen als licht-gekleurde chips met checkbox
+  - Tertiary kleur met lage alpha voor visueel onderscheid van reguliere afspraken
+  - Doorgestreepte titel bij afgeronde taken
+  - Tik op taak om af te vinken/ongedaan te maken
+- **Weekvoortgang**: Voortgangsscherm met circulaire voortgangsindicator
+  - Toon voltooid/totaal taakoverzicht
+  - Weeknavigatie (vorige/volgende)
+  - Takenlijst met checkboxes
+  - Knop naar weekplanning
+- **Planningsstreak**: Bijhouden van opeenvolgende weken plannen
+  - "Je plant al X weken op rij!" motivatiebericht
+- **Planningsherinnering**: Wekelijkse notificatie op configureerbare dag/tijd
+  - Apart notificatiekanaal (standaard prioriteit)
+  - WorkManager-gebaseerd (dagelijkse controle)
+- **Instellingen**: Weekplanning-sectie met:
+  - Planningsherinneringen aan/uit
+  - Configureerbare planningsdag
+
+#### Technisch
+- Room database migratie v3 naar v4: `eventType` en `taskCompleted` kolommen op `events`
+- `eventType` als String ("STANDARD" / "TASK") voor CalDAV X-OSC-EVENT-TYPE compatibiliteit
+- Taken als all-day Events: hergebruik bestaande CRUD en sync-infrastructuur
+- Task-specifieke DAO queries: `getTasksInRange`, `getCompletedTaskCountInRange`, `getTaskCountInRange`
+- `toggleTaskCompleted` in EventRepository met automatische `syncStatus = PENDING_UPDATE`
+- `PlanningReminderWorker` met dagelijkse PeriodicWorkRequest
+- Planning voorkeuren in AppPreferences: dag, tijd, streak, lastWeekYear
+- Streak-tracking via `year * 100 + weekNumber` encoding
+- Privacy: Taken synchroniseren als reguliere CalDAV all-day events
+- Versie: 1.3.0 (versionCode 5)
+
+---
+
 ## [1.2.0] - 2026-02-16
 
 ### Sprint 6: Leerling-Agenda & Reflectie
@@ -183,10 +224,10 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
 ## Nog Te Doen
 
-### Sprint 7: Week Vooruit Planner
-- [ ] Maandagochtend-notificatie: "Plan je week!"
-- [ ] Begeleide weekplanning met taakselectie
-- [ ] Taken als licht-gekleurde blokken in kalender
+### Sprint 8: Seizoenskaarten & Ontdek-Feed
+- [ ] Contextuele ontdekkaarten per seizoen en schooljaar
+- [ ] Natuur, schooljaar-momenten, wereldoriëntatie, fun facts
+- [ ] Afwijsbaar, niet-storend in dagweergave
 
 ---
 

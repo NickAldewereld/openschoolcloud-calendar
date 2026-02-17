@@ -33,6 +33,8 @@ import nl.openschoolcloud.calendar.presentation.screens.event.EventEditScreen
 import nl.openschoolcloud.calendar.presentation.screens.holidays.HolidayDiscoverScreen
 import nl.openschoolcloud.calendar.presentation.screens.login.LoginScreen
 import nl.openschoolcloud.calendar.presentation.screens.onboarding.OnboardingScreen
+import nl.openschoolcloud.calendar.presentation.screens.planning.WeekPlanningScreen
+import nl.openschoolcloud.calendar.presentation.screens.planning.WeekProgressScreen
 import nl.openschoolcloud.calendar.presentation.screens.reflection.WeekReviewScreen
 import nl.openschoolcloud.calendar.presentation.screens.settings.SettingsScreen
 import nl.openschoolcloud.calendar.presentation.screens.splash.SplashScreen
@@ -57,6 +59,8 @@ sealed class Route(val route: String) {
     object Settings : Route("settings")
     object WeekReview : Route("week-review")
     object HolidayDiscover : Route("holidays")
+    object WeekPlanning : Route("week-planning")
+    object WeekProgress : Route("week-progress")
     object Booking : Route("booking")
     object QrCode : Route("qrcode?url={url}&name={name}") {
         fun createRoute(url: String, name: String) =
@@ -137,6 +141,9 @@ fun AppNavigation(
                 },
                 onWeekReviewClick = {
                     navController.navigate(Route.WeekReview.route)
+                },
+                onWeekProgressClick = {
+                    navController.navigate(Route.WeekProgress.route)
                 }
             )
         }
@@ -212,6 +219,23 @@ fun AppNavigation(
         composable(Route.WeekReview.route) {
             WeekReviewScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Week planning
+        composable(Route.WeekPlanning.route) {
+            WeekPlanningScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Week progress
+        composable(Route.WeekProgress.route) {
+            WeekProgressScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onPlanWeekClick = {
+                    navController.navigate(Route.WeekPlanning.route)
+                }
             )
         }
 
