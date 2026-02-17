@@ -56,8 +56,10 @@ class MainActivity : ComponentActivity() {
         }
         val onboardingCompleted = appPreferences.onboardingCompleted
 
+        val themeMode = appPreferences.themeMode
+
         setContent {
-            OpenSchoolCloudCalendarTheme {
+            OpenSchoolCloudCalendarTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

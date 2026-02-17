@@ -472,7 +472,7 @@ private fun PromoCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE8F4FB)
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -487,7 +487,7 @@ private fun PromoCard(
                     Icon(
                         imageVector = Icons.Default.Cloud,
                         contentDescription = null,
-                        tint = Color(0xFF3B9FD9),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(Modifier.width(8.dp))

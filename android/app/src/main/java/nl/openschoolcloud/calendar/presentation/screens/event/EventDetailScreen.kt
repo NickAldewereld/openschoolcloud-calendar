@@ -656,9 +656,9 @@ private fun AttendeeRow(attendee: Attendee) {
     ) {
         // Status indicator
         val statusColor = when (attendee.status) {
-            AttendeeStatus.ACCEPTED -> Color(0xFF4CAF50)
+            AttendeeStatus.ACCEPTED -> MaterialTheme.colorScheme.tertiary
             AttendeeStatus.DECLINED -> MaterialTheme.colorScheme.error
-            AttendeeStatus.TENTATIVE -> Color(0xFFFFA726)
+            AttendeeStatus.TENTATIVE -> MaterialTheme.colorScheme.secondary
             AttendeeStatus.NEEDS_ACTION -> MaterialTheme.colorScheme.outline
         }
         Box(

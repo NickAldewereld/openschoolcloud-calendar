@@ -176,7 +176,7 @@ private fun OnboardingPageContent(page: OnboardingPage) {
             imageVector = page.icon,
             contentDescription = null,
             modifier = Modifier.size(96.dp),
-            tint = Color(0xFF3B9FD9)
+            tint = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(32.dp))
