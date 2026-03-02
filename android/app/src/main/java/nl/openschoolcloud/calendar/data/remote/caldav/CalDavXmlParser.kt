@@ -265,10 +265,14 @@ class CalDavXmlParser @Inject constructor() {
 
     /**
      * Parse sync-collection response
-     * Extracts new sync token and list of changed/deleted events
+     * Extracts new sync token and list of changed (href+etag) / deleted (href) events.
+     *
+     * Per sabre/dav spec, sync-collection only returns getetag (not calendar-data).
+     * Changed events have propstat with 200 status and etag.
+     * Deleted events have response-level 404 status.
      */
     fun parseSyncCollectionResponse(response: String): SyncCollectionResponse {
-        val changed = mutableListOf<EventData>()
+        val changed = mutableListOf<SyncChange>()
         val deleted = mutableListOf<String>()
         var syncToken = ""
 
@@ -280,7 +284,6 @@ class CalDavXmlParser @Inject constructor() {
             var inPropstat = false
             var currentHref: String? = null
             var currentEtag: String? = null
-            var currentIcalData: String? = null
             var propstatStatusCode: Int? = null
             var responseStatusCode: Int? = null
 
@@ -294,7 +297,6 @@ class CalDavXmlParser @Inject constructor() {
                                 inResponse = true
                                 currentHref = null
                                 currentEtag = null
-                                currentIcalData = null
                                 propstatStatusCode = null
                                 responseStatusCode = null
                             }
@@ -318,11 +320,6 @@ class CalDavXmlParser @Inject constructor() {
                                     currentEtag = parser.nextText()?.trim('"')
                                 }
                             }
-                            "calendar-data" -> {
-                                if (inPropstat) {
-                                    currentIcalData = parser.nextText()
-                                }
-                            }
                             "sync-token" -> {
                                 if (!inResponse) {
                                     syncToken = parser.nextText()
@@ -337,16 +334,13 @@ class CalDavXmlParser @Inject constructor() {
                             "response" -> {
                                 currentHref?.let { href ->
                                     when {
+                                        // Deleted: response-level 404 status
                                         responseStatusCode == 404 -> deleted.add(href)
-                                        currentIcalData != null -> {
-                                            changed.add(
-                                                EventData(
-                                                    href = href,
-                                                    etag = currentEtag ?: "",
-                                                    icalData = currentIcalData
-                                                )
-                                            )
+                                        // Changed: propstat with etag
+                                        currentEtag != null -> {
+                                            changed.add(SyncChange(href = href, etag = currentEtag!!))
                                         }
+                                        // Propstat 404 also means deleted
                                         propstatStatusCode == 404 -> deleted.add(href)
                                         else -> { /* Unknown status, skip */ }
                                     }

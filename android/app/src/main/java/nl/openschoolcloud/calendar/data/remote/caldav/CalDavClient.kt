@@ -202,13 +202,15 @@ class CalDavClient @Inject constructor(
     }
     
     /**
-     * Sync collection (get changed events since last sync)
+     * Sync collection (get changed event hrefs since last sync)
+     * Per sabre/dav spec, this only returns hrefs+etags, NOT calendar-data.
+     * Use calendarMultiget() to fetch actual iCal data for changed events.
      */
     suspend fun syncCollection(
         calendarUrl: String,
         username: String,
         password: String,
-        syncToken: String?
+        syncToken: String
     ): Result<SyncCollectionResponse> {
         val body = buildSyncCollectionRequest(syncToken)
         
@@ -355,6 +357,50 @@ class CalDavClient @Inject constructor(
     }
 
     /**
+     * Fetch specific events by href using calendar-multiget REPORT.
+     * Used after sync-collection to get iCal data for changed events.
+     *
+     * @param calendarUrl The calendar collection URL
+     * @param eventHrefs List of event hrefs to fetch (root-relative paths)
+     * @param username Username
+     * @param password Password
+     * @return List of EventData with iCal data for each requested event
+     */
+    suspend fun calendarMultiget(
+        calendarUrl: String,
+        eventHrefs: List<String>,
+        username: String,
+        password: String
+    ): Result<List<EventData>> {
+        if (eventHrefs.isEmpty()) return Result.success(emptyList())
+
+        val hrefElements = eventHrefs.joinToString("\n") { href ->
+            "    <d:href>$href</d:href>"
+        }
+
+        val body = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+                <d:prop>
+                    <d:getetag/>
+                    <c:calendar-data/>
+                </d:prop>
+            $hrefElements
+            </c:calendar-multiget>
+        """.trimIndent()
+
+        return report(
+            url = calendarUrl,
+            username = username,
+            password = password,
+            body = body,
+            depth = 1
+        ).mapCatching { response ->
+            parseCalendarQueryResponse(response, calendarUrl)
+        }
+    }
+
+    /**
      * Build calendar-query REPORT request body
      */
     private fun buildCalendarQueryRequest(
@@ -494,15 +540,17 @@ class CalDavClient @Inject constructor(
         url: String,
         username: String,
         password: String,
-        body: String
+        body: String,
+        depth: Int? = null
     ): Result<String> {
-        val request = Request.Builder()
+        val requestBuilder = Request.Builder()
             .url(url)
             .header("Authorization", Credentials.basic(username, password))
             .method("REPORT", body.toRequestBody(XML_MEDIA_TYPE))
-            .build()
-        
-        return executeRequest(request)
+
+        depth?.let { requestBuilder.header("Depth", it.toString()) }
+
+        return executeRequest(requestBuilder.build())
     }
     
     private fun executeRequest(request: Request): Result<String> {
@@ -513,7 +561,7 @@ class CalDavClient @Inject constructor(
                 } else {
                     Result.failure(
                         CalDavException(
-                            "Request failed: ${response.code} ${response.message}",
+                            "HTTP ${response.code} ${response.message} for ${request.method} ${request.url}",
                             response.code
                         )
                     )
@@ -807,13 +855,15 @@ class CalDavClient @Inject constructor(
 
     /**
      * Parse sync-collection response
-     * Extracts new sync token, changed events with iCal data, and deleted event hrefs
+     * Extracts new sync token, changed event hrefs+etags, and deleted event hrefs.
      *
-     * Changed events have propstat with 200 status containing etag + calendar-data.
+     * Per sabre/dav spec, sync-collection only returns getetag (not calendar-data).
+     * Changed events have propstat with 200 status containing etag.
      * Deleted events have a response-level 404 status (no propstat).
+     * New sync-token is at the end of the multistatus.
      */
     private fun parseSyncCollectionResponse(response: String): SyncCollectionResponse {
-        val changed = mutableListOf<EventData>()
+        val changed = mutableListOf<SyncChange>()
         val deleted = mutableListOf<String>()
         var syncToken = ""
 
@@ -825,7 +875,6 @@ class CalDavClient @Inject constructor(
             var inPropstat = false
             var currentHref: String? = null
             var currentEtag: String? = null
-            var currentIcalData: String? = null
             var propstatStatusCode: Int? = null
             var responseStatusCode: Int? = null
 
@@ -839,7 +888,6 @@ class CalDavClient @Inject constructor(
                                 inResponse = true
                                 currentHref = null
                                 currentEtag = null
-                                currentIcalData = null
                                 propstatStatusCode = null
                                 responseStatusCode = null
                             }
@@ -863,11 +911,6 @@ class CalDavClient @Inject constructor(
                                     currentEtag = parser.nextText()?.trim('"')
                                 }
                             }
-                            "calendar-data" -> {
-                                if (inPropstat) {
-                                    currentIcalData = parser.nextText()
-                                }
-                            }
                             "sync-token" -> {
                                 if (!inResponse) {
                                     syncToken = parser.nextText()
@@ -884,15 +927,9 @@ class CalDavClient @Inject constructor(
                                     when {
                                         // Deleted: response-level 404 status
                                         responseStatusCode == 404 -> deleted.add(href)
-                                        // Changed: has iCal data from propstat
-                                        currentIcalData != null -> {
-                                            changed.add(
-                                                EventData(
-                                                    href = href,
-                                                    etag = currentEtag ?: "",
-                                                    icalData = currentIcalData
-                                                )
-                                            )
+                                        // Changed: propstat with 200 and etag
+                                        currentEtag != null -> {
+                                            changed.add(SyncChange(href = href, etag = currentEtag!!))
                                         }
                                         // Propstat 404 also means deleted
                                         propstatStatusCode == 404 -> deleted.add(href)
@@ -947,12 +984,8 @@ class CalDavClient @Inject constructor(
         }
     }
     
-    private fun buildSyncCollectionRequest(syncToken: String?): String {
-        return if (syncToken != null) {
-            SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", syncToken)
-        } else {
-            SYNC_COLLECTION_INITIAL_REQUEST
-        }
+    private fun buildSyncCollectionRequest(syncToken: String): String {
+        return SYNC_COLLECTION_REQUEST.replace("{{SYNC_TOKEN}}", syncToken)
     }
     
     // ==================== XML Request Templates ====================
@@ -977,14 +1010,14 @@ class CalDavClient @Inject constructor(
     
     private val LIST_CALENDARS_REQUEST = """
         <?xml version="1.0" encoding="utf-8"?>
-        <d:propfind xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns">
+        <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns" xmlns:x1="http://apple.com/ns/ical/">
             <d:prop>
                 <d:resourcetype/>
                 <d:displayname/>
-                <cal:calendar-color/>
                 <cs:getctag/>
                 <d:sync-token/>
-                <cal:supported-calendar-component-set/>
+                <x1:calendar-color/>
+                <c:supported-calendar-component-set/>
                 <d:current-user-privilege-set/>
             </d:prop>
         </d:propfind>
@@ -1002,24 +1035,11 @@ class CalDavClient @Inject constructor(
     
     private val SYNC_COLLECTION_REQUEST = """
         <?xml version="1.0" encoding="utf-8"?>
-        <d:sync-collection xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:sync-collection xmlns:d="DAV:">
             <d:sync-token>{{SYNC_TOKEN}}</d:sync-token>
             <d:sync-level>1</d:sync-level>
             <d:prop>
                 <d:getetag/>
-                <c:calendar-data/>
-            </d:prop>
-        </d:sync-collection>
-    """.trimIndent()
-
-    private val SYNC_COLLECTION_INITIAL_REQUEST = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <d:sync-collection xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-            <d:sync-token/>
-            <d:sync-level>1</d:sync-level>
-            <d:prop>
-                <d:getetag/>
-                <c:calendar-data/>
             </d:prop>
         </d:sync-collection>
     """.trimIndent()
@@ -1043,8 +1063,16 @@ data class CalendarInfo(
  */
 data class SyncCollectionResponse(
     val syncToken: String,
-    val changed: List<EventData>,  // Added or modified events with iCal data
-    val deleted: List<String>      // Deleted event hrefs
+    val changed: List<SyncChange>,  // Changed event hrefs+etags (need multiget for data)
+    val deleted: List<String>       // Deleted event hrefs
+)
+
+/**
+ * A changed item from sync-collection (href + etag only, no iCal data)
+ */
+data class SyncChange(
+    val href: String,
+    val etag: String
 )
 
 /**

@@ -203,7 +203,7 @@ class CalendarRepositoryImpl @Inject constructor(
             password
         ).getOrElse { e ->
             return Result.failure(
-                Exception("PROPFIND failed for ${calendar.displayName}: ${e.message}", e)
+                Exception("${calendar.displayName}: PROPFIND failed: ${e.message}", e)
             )
         }
 
@@ -237,10 +237,10 @@ class CalendarRepositoryImpl @Inject constructor(
                 return incrementalResult
             }
 
-            // If token expired (400/403), fall through to full sync
+            // If token expired (400/403/412), fall through to full sync
             val error = incrementalResult.exceptionOrNull()
             val isTokenExpired = error is CalDavException &&
-                    (error.httpCode == 400 || error.httpCode == 403)
+                    (error.httpCode == 400 || error.httpCode == 403 || error.httpCode == 412)
 
             if (!isTokenExpired) {
                 // Non-token error (network, auth) — don't retry with full sync
@@ -262,8 +262,12 @@ class CalendarRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Incremental sync using sync-collection REPORT.
-     * Only fetches changed/deleted events since the last syncToken.
+     * Incremental sync using sync-collection REPORT + calendar-multiget.
+     *
+     * Per sabre/dav spec:
+     * 1. sync-collection returns changed hrefs+etags and deleted hrefs (no iCal data)
+     * 2. calendar-multiget fetches actual iCal data for changed events
+     * This is more efficient than fetching all data in sync-collection.
      */
     private suspend fun doIncrementalSync(
         calendarId: String,
@@ -275,6 +279,7 @@ class CalendarRepositoryImpl @Inject constructor(
         newCtag: String?,
         serverSyncToken: String?
     ): Result<SyncResult> {
+        // Step 1: Get list of changed/deleted hrefs via sync-collection
         val syncResponse = calDavClient.syncCollection(
             calendarUrl = calendarUrl,
             username = username,
@@ -283,31 +288,11 @@ class CalendarRepositoryImpl @Inject constructor(
         ).getOrElse { e ->
             return Result.failure(
                 if (e is CalDavException) e
-                else Exception("sync-collection failed for $calendarName: ${e.message}", e)
+                else Exception("$calendarName: sync-collection failed: ${e.message}", e)
             )
         }
 
-        // Process changed events
-        var added = 0
-        var updated = 0
-        for (eventData in syncResponse.changed) {
-            val entity = icalParser.parseEvent(
-                icalData = eventData.icalData,
-                calendarId = calendarId,
-                etag = eventData.etag
-            ) ?: continue
-
-            val existing = eventDao.getByUid(entity.uid)
-            if (existing == null) {
-                eventDao.insert(entity)
-                added++
-            } else {
-                eventDao.update(entity)
-                updated++
-            }
-        }
-
-        // Process deleted events
+        // Step 2: Process deleted events
         var deleted = 0
         for (href in syncResponse.deleted) {
             val uid = extractUidFromHref(href) ?: continue
@@ -318,7 +303,46 @@ class CalendarRepositoryImpl @Inject constructor(
             }
         }
 
-        // Save new sync state
+        // Step 3: Fetch iCal data for changed events via calendar-multiget
+        var added = 0
+        var updated = 0
+
+        if (syncResponse.changed.isNotEmpty()) {
+            // Batch multiget requests (max 50 hrefs per request to avoid huge payloads)
+            val batches = syncResponse.changed.chunked(50)
+            for (batch in batches) {
+                val hrefs = batch.map { it.href }
+                val multigetResult = calDavClient.calendarMultiget(
+                    calendarUrl = calendarUrl,
+                    eventHrefs = hrefs,
+                    username = username,
+                    password = password
+                ).getOrElse { e ->
+                    return Result.failure(
+                        Exception("$calendarName: calendar-multiget failed: ${e.message}", e)
+                    )
+                }
+
+                for (eventData in multigetResult) {
+                    val entity = icalParser.parseEvent(
+                        icalData = eventData.icalData,
+                        calendarId = calendarId,
+                        etag = eventData.etag
+                    ) ?: continue
+
+                    val existing = eventDao.getByUid(entity.uid)
+                    if (existing == null) {
+                        eventDao.insert(entity)
+                        added++
+                    } else {
+                        eventDao.update(entity)
+                        updated++
+                    }
+                }
+            }
+        }
+
+        // Step 4: Save new sync state
         val newSyncToken = syncResponse.syncToken.ifBlank { serverSyncToken }
         calendarDao.updateSyncInfo(calendarId, newCtag, newSyncToken)
 
@@ -358,7 +382,7 @@ class CalendarRepositoryImpl @Inject constructor(
 
         val eventDataList = eventsResult.getOrElse { e ->
             return Result.failure(
-                Exception("calendar-query failed for $calendarName: ${e.message}", e)
+                Exception("$calendarName: calendar-query failed: ${e.message}", e)
             )
         }
 
@@ -684,6 +708,7 @@ class CalendarRepositoryImpl @Inject constructor(
                                 sb.appendLine("    Stored CTag: ${cal.ctag ?: "(null)"}")
                                 sb.appendLine("    Changed: $ctagChanged")
                                 sb.appendLine("    Server SyncToken: ${info.syncToken ?: "(null)"}")
+                                sb.appendLine("    Stored SyncToken: ${cal.syncToken ?: "(null)"}")
                             },
                             onFailure = { error ->
                                 sb.appendLine("  Sync check [${cal.displayName}]: FAILED - ${error.message}")
@@ -691,6 +716,36 @@ class CalendarRepositoryImpl @Inject constructor(
                         )
                     } catch (e: Exception) {
                         sb.appendLine("  Sync check [${cal.displayName}]: Exception - ${e.message}")
+                    }
+                }
+
+                // Event fetch test (calendar-query REPORT) for first calendar
+                val firstCal = accountCalendars.firstOrNull { it.url.isNotBlank() }
+                if (firstCal != null) {
+                    sb.appendLine()
+                    sb.appendLine("  --- Event Fetch Test [${firstCal.displayName}] ---")
+                    try {
+                        val eventsResult = calDavClient.fetchEvents(
+                            calendarUrl = firstCal.url,
+                            username = account.username,
+                            password = password
+                        )
+                        eventsResult.fold(
+                            onSuccess = { events ->
+                                sb.appendLine("  calendar-query REPORT: ${events.size} events returned")
+                                if (events.isNotEmpty()) {
+                                    val first = events.first()
+                                    sb.appendLine("    First event href: ${first.href}")
+                                    sb.appendLine("    First event etag: ${first.etag}")
+                                    sb.appendLine("    First event data: ${first.icalData.length} chars")
+                                }
+                            },
+                            onFailure = { error ->
+                                sb.appendLine("  calendar-query REPORT: FAILED - ${error.message}")
+                            }
+                        )
+                    } catch (e: Exception) {
+                        sb.appendLine("  calendar-query REPORT: Exception - ${e.message}")
                     }
                 }
             }

@@ -222,14 +222,15 @@ class CalendarViewModel @Inject constructor(
                     val totalAdded = syncResults.sumOf { it.eventsAdded }
                     val totalUpdated = syncResults.sumOf { it.eventsUpdated }
                     val totalDeleted = syncResults.sumOf { it.eventsDeleted }
-                    val failedCount = syncResults.count { !it.success }
+                    val failed = syncResults.filter { !it.success }
 
                     _uiState.update {
                         it.copy(
                             isSyncing = false,
                             lastSyncTime = Instant.now(),
-                            syncMessage = if (failedCount > 0) {
-                                "Sync completed with $failedCount errors"
+                            syncMessage = if (failed.isNotEmpty()) {
+                                val errorDetails = failed.mapNotNull { r -> r.error }.joinToString("; ")
+                                "Sync: ${failed.size} fouten — $errorDetails"
                             } else {
                                 "Synced: +$totalAdded, ~$totalUpdated, -$totalDeleted"
                             }

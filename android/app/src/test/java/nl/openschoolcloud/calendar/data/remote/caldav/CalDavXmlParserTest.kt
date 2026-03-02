@@ -328,9 +328,7 @@ class CalDavXmlParserTest {
               </d:response>
               <d:response>
                 <d:href>/calendars/user/calendar/event2.ics</d:href>
-                <d:propstat>
-                  <d:status>HTTP/1.1 404 Not Found</d:status>
-                </d:propstat>
+                <d:status>HTTP/1.1 404 Not Found</d:status>
               </d:response>
               <d:sync-token>newtoken456</d:sync-token>
             </d:multistatus>
@@ -339,10 +337,32 @@ class CalDavXmlParserTest {
         val result = parser.parseSyncCollectionResponse(response)
 
         assertEquals("newtoken456", result.syncToken)
-        assertEquals(1, result.modified.size)
+        assertEquals(1, result.changed.size)
         assertEquals(1, result.deleted.size)
-        assertTrue(result.modified.contains("/calendars/user/calendar/event1.ics"))
+        assertEquals("/calendars/user/calendar/event1.ics", result.changed[0].href)
+        assertEquals("abc123", result.changed[0].etag)
         assertTrue(result.deleted.contains("/calendars/user/calendar/event2.ics"))
+    }
+
+    @Test
+    fun `parseSyncCollectionResponse handles response-level 404 for deleted items`() {
+        val response = """
+            <?xml version="1.0"?>
+            <d:multistatus xmlns:d="DAV:">
+              <d:response>
+                <d:href>/calendars/user/calendar/deleted-event.ics</d:href>
+                <d:status>HTTP/1.1 404 Not Found</d:status>
+              </d:response>
+              <d:sync-token>http://sabre.io/ns/sync/999</d:sync-token>
+            </d:multistatus>
+        """.trimIndent()
+
+        val result = parser.parseSyncCollectionResponse(response)
+
+        assertEquals("http://sabre.io/ns/sync/999", result.syncToken)
+        assertEquals(0, result.changed.size)
+        assertEquals(1, result.deleted.size)
+        assertEquals("/calendars/user/calendar/deleted-event.ics", result.deleted[0])
     }
 
     // ==================== Helper method tests ====================
