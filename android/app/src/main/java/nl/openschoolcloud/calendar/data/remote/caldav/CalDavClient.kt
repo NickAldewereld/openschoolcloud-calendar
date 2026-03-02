@@ -17,6 +17,7 @@
  */
 package nl.openschoolcloud.calendar.data.remote.caldav
 
+import android.util.Log
 import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -47,9 +48,10 @@ class CalDavClient @Inject constructor(
     private val httpClient: OkHttpClient
 ) {
     companion object {
+        private const val TAG = "CalDavClient"
         private val XML_MEDIA_TYPE = "application/xml; charset=utf-8".toMediaType()
         private val ICAL_MEDIA_TYPE = "text/calendar; charset=utf-8".toMediaType()
-        
+
         // Well-known CalDAV endpoint for Nextcloud
         const val WELL_KNOWN_CALDAV = "/.well-known/caldav"
         const val NEXTCLOUD_DAV_PATH = "/remote.php/dav"
@@ -159,7 +161,11 @@ class CalDavClient @Inject constructor(
             body = LIST_CALENDARS_REQUEST,
             depth = 1
         ).mapCatching { response ->
-            parseCalendars(response, calendarHomeUrl)
+            Log.d(TAG, "PROPFIND Depth:1 on $calendarHomeUrl — response length: ${response.length}")
+            Log.d(TAG, "PROPFIND response (first 3000 chars): ${response.take(3000)}")
+            val calendars = parseCalendars(response, calendarHomeUrl)
+            Log.d(TAG, "Parsed ${calendars.size} calendars from PROPFIND response")
+            calendars
         }
     }
     
@@ -769,6 +775,8 @@ class CalDavClient @Inject constructor(
 
                         when (localName) {
                             "response" -> {
+                                // Log every response element for diagnostics
+                                Log.d(TAG, "PROPFIND response element: href=$currentHref, isCalendar=$isCalendar, displayName=$currentDisplayName, supportsEvents=$supportsEvents")
                                 // End of response - add calendar if it's valid
                                 if (isCalendar && currentHref != null) {
                                     val resolvedUrl = resolveUrl(baseUrl, currentHref)
@@ -783,6 +791,9 @@ class CalDavClient @Inject constructor(
                                             supportsEvents = supportsEvents
                                         )
                                     )
+                                    Log.d(TAG, "  → Added calendar: ${currentDisplayName ?: "Calendar"} at $resolvedUrl")
+                                } else if (currentHref != null) {
+                                    Log.d(TAG, "  → Skipped (isCalendar=$isCalendar)")
                                 }
                                 inResponse = false
                             }
